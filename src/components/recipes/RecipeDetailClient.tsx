@@ -110,7 +110,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
   if (loading) {
     return (
       <div className="p-4 md:p-8">
-        <p className="text-sm text-neutral-500">Loading...</p>
+        <p className="text-sm text-accent-900/55">Loading...</p>
       </div>
     );
   }
@@ -118,8 +118,8 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
   if (!recipe) {
     return (
       <div className="p-4 md:p-8">
-        <p className="text-sm text-neutral-500">Recipe not found.</p>
-        <Link href="/recipes" className="mt-2 inline-block text-sm text-neutral-500 hover:underline">
+        <p className="text-sm text-accent-900/55">Recipe not found.</p>
+        <Link href="/recipes" className="mt-2 inline-block text-sm text-accent-900/55 hover:underline">
           Back to recipes
         </Link>
       </div>
@@ -128,19 +128,19 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/recipes" className="mb-4 inline-block text-sm text-neutral-500 hover:underline">
+      <Link href="/recipes" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
         Back to recipes
       </Link>
 
-      <h1 className="mb-1 text-2xl font-semibold text-neutral-900">{recipe.title}</h1>
+      <h1 className="mb-1 text-2xl font-semibold text-[var(--foreground)]">{recipe.title}</h1>
       {recipe.servings && (
-        <p className="mb-6 text-sm text-neutral-500">Servings: {recipe.servings}</p>
+        <p className="mb-6 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <section className="rounded-xl border border-neutral-200 p-4">
+        <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-medium text-neutral-900">Ingredients</h2>
+            <h2 className="font-medium text-[var(--foreground)]">Ingredients</h2>
           </div>
           {ingredients.length === 0 ? (
             <p className="text-sm text-neutral-400">No ingredients listed.</p>
@@ -157,18 +157,18 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
               type="button"
               onClick={handleAddToGroceryList}
               disabled={addingToList || ingredients.length === 0}
-              className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {addingToList ? "Adding..." : "Add ingredients to grocery list"}
             </button>
             {addResultMessage && (
-              <p className="mt-2 text-sm text-neutral-500">{addResultMessage}</p>
+              <p className="mt-2 text-sm text-accent-900/55">{addResultMessage}</p>
             )}
           </div>
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <h2 className="mb-2 font-medium text-neutral-900">Steps</h2>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <h2 className="mb-2 font-medium text-[var(--foreground)]">Steps</h2>
           {recipe.steps.length === 0 ? (
             <p className="text-sm text-neutral-400">No steps listed.</p>
           ) : (

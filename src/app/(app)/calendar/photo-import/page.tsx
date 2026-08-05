@@ -158,10 +158,10 @@ export default function PhotoImportPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/calendar" className="mb-4 inline-block text-sm text-neutral-500 hover:underline">
+      <Link href="/calendar" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
         ← Back to calendar
       </Link>
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Add event via photo</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Add event via photo</h1>
 
       <div
         onDragOver={(e) => e.preventDefault()}
@@ -172,7 +172,7 @@ export default function PhotoImportPage() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewUrl} alt="Selected invite" className="mx-auto mb-3 max-h-64 rounded-md object-contain" />
         ) : (
-          <p className="mb-3 text-sm text-neutral-500">
+          <p className="mb-3 text-sm text-accent-900/55">
             Take a photo of a flyer or invite, or drop an image here.
           </p>
         )}
@@ -203,8 +203,8 @@ export default function PhotoImportPage() {
       )}
 
       <form onSubmit={handleSave} className="max-w-2xl space-y-4">
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Title</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Title</label>
           <input
             type="text"
             required
@@ -215,8 +215,8 @@ export default function PhotoImportPage() {
           />
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Location</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Location</label>
           <input
             type="text"
             value={location}
@@ -226,7 +226,7 @@ export default function PhotoImportPage() {
           />
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
+        <section className="rounded-xl border border-accent-100 p-4">
           <label className="flex items-center gap-2 text-sm text-neutral-700">
             <input
               type="checkbox"
@@ -260,8 +260,8 @@ export default function PhotoImportPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Assigned to</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Assigned to</label>
           <select
             value={assignedMemberId}
             onChange={(e) => setAssignedMemberId(e.target.value)}
@@ -276,8 +276,8 @@ export default function PhotoImportPage() {
           </select>
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Notes</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -292,7 +292,7 @@ export default function PhotoImportPage() {
         <button
           type="submit"
           disabled={saving || !title.trim()}
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save event"}
         </button>

@@ -162,11 +162,11 @@ export function EventModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-medium text-neutral-900">{isEdit ? "Edit event" : "New event"}</h2>
+          <h2 className="font-medium text-[var(--foreground)]">{isEdit ? "Edit event" : "New event"}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-neutral-500 hover:text-neutral-700"
+            className="text-sm text-accent-900/55 hover:text-neutral-700"
           >
             Close
           </button>
@@ -306,7 +306,7 @@ export function EventModal({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>

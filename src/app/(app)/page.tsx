@@ -55,18 +55,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Today</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Today</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-xl border border-neutral-200 p-4">
+        <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium text-neutral-900">Calendar</h2>
-            <Link href="/calendar" className="text-sm text-neutral-500 hover:underline">
+            <h2 className="font-medium text-[var(--foreground)]">Calendar</h2>
+            <Link href="/calendar" className="text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
           {todaysEvents.length === 0 ? (
-            <p className="text-sm text-neutral-500">No events today.</p>
+            <p className="text-sm text-accent-900/55">No events today.</p>
           ) : (
             <ul className="space-y-2">
               {todaysEvents.map((event) => {
@@ -77,8 +77,8 @@ export default async function DashboardPage() {
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: member?.color ?? "#a3a3a3" }}
                     />
-                    <span className="font-medium text-neutral-900">{event.title}</span>
-                    <span className="text-neutral-500">
+                    <span className="font-medium text-[var(--foreground)]">{event.title}</span>
+                    <span className="text-accent-900/55">
                       {event.all_day
                         ? "All day"
                         : new Date(event.starts_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
@@ -90,10 +90,10 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
+        <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium text-neutral-900">Today&apos;s tasks</h2>
-            <Link href="/tasks" className="text-sm text-neutral-500 hover:underline">
+            <h2 className="font-medium text-[var(--foreground)]">Today&apos;s tasks</h2>
+            <Link href="/tasks" className="text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
@@ -107,12 +107,12 @@ export default async function DashboardPage() {
               const total = memberTemplates.length;
               if (total === 0) return null;
               return (
-                <div key={member.id} className="rounded-lg border border-neutral-200 p-2">
+                <div key={member.id} className="rounded-lg border border-accent-100 p-2">
                   <div className="mb-1 flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: member.color }} />
-                    <span className="text-sm font-medium text-neutral-900">{member.display_name}</span>
+                    <span className="text-sm font-medium text-[var(--foreground)]">{member.display_name}</span>
                   </div>
-                  <span className="text-xs text-neutral-500">
+                  <span className="text-xs text-accent-900/55">
                     {done}/{total} done
                   </span>
                 </div>
@@ -121,10 +121,10 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4 md:col-span-2">
+        <section className="rounded-xl border border-accent-100 p-4 md:col-span-2">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium text-neutral-900">Lists</h2>
-            <Link href="/lists" className="text-sm text-neutral-500 hover:underline">
+            <h2 className="font-medium text-[var(--foreground)]">Lists</h2>
+            <Link href="/lists" className="text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
@@ -132,10 +132,10 @@ export default async function DashboardPage() {
             {allLists.map((list) => {
               const items = listItemsByList[list.id] ?? [];
               return (
-                <div key={list.id} className="rounded-lg border border-neutral-200 p-3">
+                <div key={list.id} className="rounded-lg border border-accent-100 p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-neutral-900">{list.name}</span>
-                    <span className="text-xs text-neutral-500">{items.length} left</span>
+                    <span className="text-sm font-medium text-[var(--foreground)]">{list.name}</span>
+                    <span className="text-xs text-accent-900/55">{items.length} left</span>
                   </div>
                   <ul className="space-y-1">
                     {items.slice(0, 4).map((item) => (

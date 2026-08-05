@@ -32,9 +32,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-neutral-200 bg-white p-8 shadow-sm"
+        className="w-full max-w-sm space-y-4 rounded-xl border border-accent-100 bg-white p-8 shadow-sm"
       >
-        <h1 className="text-xl font-semibold text-neutral-900">Family Hub</h1>
+        <h1 className="text-xl font-semibold text-[var(--foreground)]">Family Hub</h1>
         <div className="space-y-1">
           <label className="text-sm font-medium text-neutral-700">Email</label>
           <input
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>

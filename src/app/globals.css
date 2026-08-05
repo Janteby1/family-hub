@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf7f0;
+  --foreground: #221a12;
+
+  /* Warm accent palette (terracotta) — used for primary actions, nav
+     active states, and anywhere the app needs a splash of color instead
+     of flat neutral gray. */
+  --color-accent-50: #fdf3ed;
+  --color-accent-100: #fbe4d5;
+  --color-accent-200: #f5c9ab;
+  --color-accent-300: #eda87c;
+  --color-accent-400: #e6884f;
+  --color-accent-500: #dd6f34;
+  --color-accent-600: #c15a26;
+  --color-accent-700: #9c481f;
+  --color-accent-800: #7a3919;
+  --color-accent-900: #5c2b13;
+
+  /* A second, cooler accent for variety (used sparingly, e.g. Rewards). */
+  --color-sage-100: #e4ecdf;
+  --color-sage-500: #7a9a6b;
+  --color-sage-600: #62804f;
 }
 
 @theme inline {
@@ -10,17 +29,44 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-fraunces);
+
+  --color-accent-50: var(--color-accent-50);
+  --color-accent-100: var(--color-accent-100);
+  --color-accent-200: var(--color-accent-200);
+  --color-accent-300: var(--color-accent-300);
+  --color-accent-400: var(--color-accent-400);
+  --color-accent-500: var(--color-accent-500);
+  --color-accent-600: var(--color-accent-600);
+  --color-accent-700: var(--color-accent-700);
+  --color-accent-800: var(--color-accent-800);
+  --color-accent-900: var(--color-accent-900);
+
+  --color-sage-100: var(--color-sage-100);
+  --color-sage-500: var(--color-sage-500);
+  --color-sage-600: var(--color-sage-600);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #211a14;
+    --foreground: #f2e9de;
+
+    --color-accent-50: #3a2416;
+    --color-accent-100: #4a2d1a;
+    --color-accent-500: #e6884f;
+    --color-accent-600: #ed9a63;
+    --color-accent-700: #f0ac7d;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+h1,
+h2 {
+  font-family: var(--font-serif), Georgia, serif;
 }

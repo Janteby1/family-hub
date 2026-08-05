@@ -123,16 +123,16 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/lists" className="mb-4 inline-block text-sm text-neutral-500 hover:underline">
+      <Link href="/lists" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
         ← Back to lists
       </Link>
 
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">
         {loading ? "Loading..." : list?.name ?? "List not found"}
       </h1>
 
-      <section className="mb-6 rounded-xl border border-neutral-200 p-4">
-        <h2 className="mb-3 font-medium text-neutral-900">Add item</h2>
+      <section className="mb-6 rounded-xl border border-accent-100 p-4">
+        <h2 className="mb-3 font-medium text-[var(--foreground)]">Add item</h2>
         <div className="flex gap-2">
           <input
             type="text"
@@ -164,7 +164,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
             type="button"
             onClick={handleAdd}
             disabled={adding || !newLabel.trim() || !member}
-            className="shrink-0 rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="shrink-0 rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {adding ? "Adding..." : "Add"}
           </button>
@@ -173,15 +173,15 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
       </section>
 
       {loading ? (
-        <p className="text-sm text-neutral-500">Loading items...</p>
+        <p className="text-sm text-accent-900/55">Loading items...</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-neutral-500">No items yet.</p>
+        <p className="text-sm text-accent-900/55">No items yet.</p>
       ) : (
         <ul className="space-y-1">
           {uncheckedItems.map((item) => (
             <li
               key={item.id}
-              className="flex items-center gap-3 rounded-md border border-neutral-200 px-3 py-2"
+              className="flex items-center gap-3 rounded-md border border-accent-100 px-3 py-2"
             >
               <input
                 type="checkbox"
@@ -189,8 +189,8 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
                 onChange={() => handleToggle(item)}
                 className="h-4 w-4 rounded border-neutral-300"
               />
-              <span className="flex-1 text-sm text-neutral-900">{item.label}</span>
-              {item.quantity && <span className="text-xs text-neutral-500">{item.quantity}</span>}
+              <span className="flex-1 text-sm text-[var(--foreground)]">{item.label}</span>
+              {item.quantity && <span className="text-xs text-accent-900/55">{item.quantity}</span>}
               <button
                 type="button"
                 onClick={() => handleDelete(item)}
@@ -204,11 +204,11 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
 
           {checkedItems.length > 0 && (
             <>
-              <li className="my-2 border-t border-neutral-200" />
+              <li className="my-2 border-t border-accent-100" />
               {checkedItems.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 rounded-md border border-neutral-200 px-3 py-2"
+                  className="flex items-center gap-3 rounded-md border border-accent-100 px-3 py-2"
                 >
                   <input
                     type="checkbox"

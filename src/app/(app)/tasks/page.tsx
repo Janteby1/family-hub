@@ -204,21 +204,24 @@ export default function TasksPage() {
   if (loading) {
     return (
       <div className="p-4 md:p-8">
-        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Tasks</h1>
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Tasks</h1>
+        <p className="text-sm text-accent-900/55">Loading…</p>
       </div>
     );
   }
 
+  function openAddFor(memberId: string) {
+    setNewUpForGrabs(false);
+    setNewAssignee(memberId);
+    setAddOpen(true);
+  }
+
   const upForGrabsTemplates = templates.filter((t) => t.is_up_for_grabs);
-  const membersWithChores = members.filter((m) =>
-    templates.some((t) => t.assigned_member_id === m.id && !t.is_up_for_grabs)
-  );
 
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">Tasks</h1>
+        <h1 className="text-2xl font-semibold text-[var(--foreground)]">Tasks</h1>
         <button
           type="button"
           onClick={() => setAddOpen((v) => !v)}
@@ -231,10 +234,10 @@ export default function TasksPage() {
       {addOpen && (
         <form
           onSubmit={addChore}
-          className="mb-6 flex flex-col gap-3 rounded-xl border border-neutral-200 p-4 md:flex-row md:items-end"
+          className="mb-6 flex flex-col gap-3 rounded-xl border border-accent-100 p-4 md:flex-row md:items-end"
         >
           <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-500">
+            <label className="mb-1 block text-xs font-medium text-accent-900/55">
               Chore title
             </label>
             <input
@@ -248,7 +251,7 @@ export default function TasksPage() {
           </div>
 
           <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-neutral-500">
+            <label className="mb-1 block text-xs font-medium text-accent-900/55">
               Assign to
             </label>
             <select
@@ -285,7 +288,7 @@ export default function TasksPage() {
           <button
             type="submit"
             disabled={saving || !newTitle.trim() || (!newUpForGrabs && !newAssignee)}
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {saving ? "Adding…" : "Add"}
           </button>
@@ -293,7 +296,7 @@ export default function TasksPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {membersWithChores.map((member) => {
+        {members.map((member) => {
           const memberTemplates = templates.filter(
             (t) => t.assigned_member_id === member.id && !t.is_up_for_grabs
           );
@@ -303,50 +306,65 @@ export default function TasksPage() {
           const done = rows.filter((r) => r.instance.completed).length;
 
           return (
-            <section key={member.id} className="rounded-xl border border-neutral-200 p-4">
+            <section key={member.id} className="rounded-xl border border-accent-100 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: member.color }}
                   />
-                  <h2 className="font-medium text-neutral-900">{member.display_name}</h2>
+                  <h2 className="font-medium text-[var(--foreground)]">{member.display_name}</h2>
                 </div>
-                <span className="text-sm text-neutral-500">
-                  {done}/{rows.length}
-                </span>
+                {rows.length > 0 && (
+                  <span className="text-sm text-accent-900/55">
+                    {done}/{rows.length}
+                  </span>
+                )}
               </div>
-              <ul className="space-y-2">
-                {rows.map(({ template, instance }) => (
-                  <li key={template.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={instance.completed}
-                      onChange={(e) => toggleInstance(instance, e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300"
-                    />
-                    <span
-                      className={
-                        instance.completed
-                          ? "text-sm text-neutral-400 line-through"
-                          : "text-sm text-neutral-900"
-                      }
-                    >
-                      {template.title}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {rows.length === 0 ? (
+                <div className="rounded-md border border-dashed border-accent-200 p-3 text-center">
+                  <p className="mb-2 text-sm text-accent-900/55">No chores yet.</p>
+                  <button
+                    type="button"
+                    onClick={() => openAddFor(member.id)}
+                    className="text-sm font-medium text-accent-600 hover:underline"
+                  >
+                    + Add a chore for {member.display_name}
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {rows.map(({ template, instance }) => (
+                    <li key={template.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={instance.completed}
+                        onChange={(e) => toggleInstance(instance, e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-300"
+                      />
+                      <span
+                        className={
+                          instance.completed
+                            ? "text-sm text-neutral-400 line-through"
+                            : "text-sm text-[var(--foreground)]"
+                        }
+                      >
+                        {template.title}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           );
         })}
 
-        <section className="rounded-xl border border-neutral-200 p-4">
+        <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium text-neutral-900">Up for Grabs</h2>
+            <h2 className="font-medium text-[var(--foreground)]">Up for Grabs</h2>
           </div>
           {upForGrabsTemplates.length === 0 ? (
-            <p className="text-sm text-neutral-500">Nothing up for grabs today.</p>
+            <p className="text-sm text-accent-900/55">Nothing up for grabs today.</p>
           ) : (
             <ul className="space-y-2">
               {upForGrabsTemplates.map((template) => {
@@ -359,7 +377,7 @@ export default function TasksPage() {
                 if (!claimedBy) {
                   return (
                     <li key={template.id} className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-neutral-900">{template.title}</span>
+                      <span className="text-sm text-[var(--foreground)]">{template.title}</span>
                       <button
                         type="button"
                         onClick={() => claimInstance(instance)}
@@ -384,12 +402,12 @@ export default function TasksPage() {
                       className={
                         instance.completed
                           ? "text-sm text-neutral-400 line-through"
-                          : "text-sm text-neutral-900"
+                          : "text-sm text-[var(--foreground)]"
                       }
                     >
                       {template.title}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-neutral-500">
+                    <span className="flex items-center gap-1 text-xs text-accent-900/55">
                       <span
                         className="h-2 w-2 rounded-full"
                         style={{ backgroundColor: claimedBy.color }}

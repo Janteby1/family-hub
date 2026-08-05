@@ -3,70 +3,66 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { BadgeModule } from "@/lib/types";
+import {
+  HomeIcon,
+  CalendarIcon,
+  TasksIcon,
+  ListsIcon,
+  MealsIcon,
+  RecipesIcon,
+  RewardsIcon,
+} from "@/components/nav/icons";
 
-const NAV_ITEMS: { href: string; label: string; module: BadgeModule | "home" }[] = [
-  { href: "/", label: "Home", module: "home" },
-  { href: "/calendar", label: "Calendar", module: "calendar" },
-  { href: "/tasks", label: "Tasks", module: "tasks" },
-  { href: "/lists", label: "Lists", module: "lists" },
-  { href: "/meals", label: "Meals", module: "meals" },
-  { href: "/recipes", label: "Recipes", module: "recipes" },
-  { href: "/rewards", label: "Rewards", module: "rewards" },
+const NAV_ITEMS: {
+  href: string;
+  label: string;
+  module: BadgeModule | "home";
+  Icon: (props: { className?: string }) => React.ReactElement;
+}[] = [
+  { href: "/", label: "Home", module: "home", Icon: HomeIcon },
+  { href: "/calendar", label: "Calendar", module: "calendar", Icon: CalendarIcon },
+  { href: "/tasks", label: "Tasks", module: "tasks", Icon: TasksIcon },
+  { href: "/lists", label: "Lists", module: "lists", Icon: ListsIcon },
+  { href: "/meals", label: "Meals", module: "meals", Icon: MealsIcon },
+  { href: "/recipes", label: "Recipes", module: "recipes", Icon: RecipesIcon },
+  { href: "/rewards", label: "Rewards", module: "rewards", Icon: RewardsIcon },
 ];
 
+// A single persistent left icon rail at every viewport width — narrow with
+// icon+tiny label on phones, wider with a header and full labels from `sm`
+// up. Mirrors the always-visible sidebar in the Skylight reference photos
+// rather than swapping to a bottom tab bar on mobile.
 export function Nav({ badgeCounts = {} }: { badgeCounts?: Partial<Record<BadgeModule, number>> }) {
   const pathname = usePathname();
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <nav className="hidden w-56 flex-col gap-1 border-r border-neutral-200 bg-white p-4 md:flex">
-        <div className="mb-4 px-2 text-lg font-semibold text-neutral-900">Family Hub</div>
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
-          const count = item.module !== "home" ? badgeCounts[item.module] : undefined;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                active ? "bg-neutral-900 text-white" : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <span>{item.label}</span>
-              {!!count && (
-                <span className="ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold text-white">
-                  {count}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-neutral-200 bg-white md:hidden">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
-          const count = item.module !== "home" ? badgeCounts[item.module] : undefined;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
-                active ? "text-neutral-900" : "text-neutral-500"
-              }`}
-            >
-              <span>{item.label}</span>
-              {!!count && (
-                <span className="absolute right-2 top-1 rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
-                  {count}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-    </>
+    <nav className="flex w-[72px] shrink-0 flex-col gap-1 border-r border-accent-200/60 bg-white/70 p-2 sm:w-56 sm:p-4">
+      <div className="mb-2 hidden px-2 font-serif text-lg font-semibold text-accent-900 sm:mb-4 sm:block">
+        Family Hub
+      </div>
+      {NAV_ITEMS.map((item) => {
+        const active = pathname === item.href;
+        const count = item.module !== "home" ? badgeCounts[item.module] : undefined;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[11px] font-medium transition-colors sm:flex-row sm:justify-start sm:gap-3 sm:px-3 sm:text-sm ${
+              active
+                ? "bg-accent-600 text-white shadow-sm"
+                : "text-accent-900/80 hover:bg-accent-100"
+            }`}
+          >
+            <item.Icon className="h-5 w-5 shrink-0" />
+            <span>{item.label}</span>
+            {!!count && (
+              <span className="absolute right-1 top-1 rounded-full bg-sage-600 px-1.5 py-0.5 text-[10px] font-semibold text-white sm:static sm:ml-auto">
+                {count}
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

@@ -85,15 +85,15 @@ export default function RewardsPage() {
   if (loading) {
     return (
       <div className="p-4 md:p-8">
-        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Rewards</h1>
-        <p className="text-sm text-neutral-500">Loading…</p>
+        <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Rewards</h1>
+        <p className="text-sm text-accent-900/55">Loading…</p>
       </div>
     );
   }
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Rewards</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Rewards</h1>
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -102,14 +102,14 @@ export default function RewardsPage() {
           const history = historyByMember.get(kid.id) ?? [];
 
           return (
-            <section key={kid.id} className="rounded-xl border border-neutral-200 p-4">
+            <section key={kid.id} className="rounded-xl border border-accent-100 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: kid.color }} />
-                <h2 className="font-medium text-neutral-900">{kid.display_name}</h2>
+                <h2 className="font-medium text-[var(--foreground)]">{kid.display_name}</h2>
               </div>
 
-              <p className="mb-4 text-3xl font-semibold text-neutral-900">
-                {balance} <span className="text-base font-normal text-neutral-500">★ stars</span>
+              <p className="mb-4 text-3xl font-semibold text-[var(--foreground)]">
+                {balance} <span className="text-base font-normal text-accent-900/55">★ stars</span>
               </p>
 
               <div className="mb-4 flex items-center gap-2">
@@ -136,7 +136,7 @@ export default function RewardsPage() {
               {history.length > 0 && (
                 <ul className="space-y-1 border-t border-neutral-100 pt-3">
                   {history.map((entry) => (
-                    <li key={entry.id} className="flex items-center justify-between text-xs text-neutral-500">
+                    <li key={entry.id} className="flex items-center justify-between text-xs text-accent-900/55">
                       <span>{entry.reason === "redeemed" ? "Redeemed" : "Chore completed"}</span>
                       <span className={entry.delta < 0 ? "text-red-600" : "text-green-600"}>
                         {entry.delta > 0 ? `+${entry.delta}` : entry.delta}

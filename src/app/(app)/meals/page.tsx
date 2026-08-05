@@ -145,7 +145,7 @@ export default function MealsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Meal Planner</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Meal Planner</h1>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -175,18 +175,18 @@ export default function MealsPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-neutral-500">Loading...</p>
+        <p className="text-sm text-accent-900/55">Loading...</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse">
             <thead>
               <tr>
-                <th className="w-24 p-2 text-left text-xs font-medium text-neutral-500"> </th>
+                <th className="w-24 p-2 text-left text-xs font-medium text-accent-900/55"> </th>
                 {weekDays.map((day) => {
                   const isToday = dateKey(day) === dateKey(today);
                   return (
                     <th key={dateKey(day)} className="p-2 text-left text-xs font-medium">
-                      <span className={isToday ? "text-neutral-900" : "text-neutral-500"}>
+                      <span className={isToday ? "text-[var(--foreground)]" : "text-accent-900/55"}>
                         {DAY_LABELS[day.getDay()]} {day.getDate()}
                       </span>
                     </th>
@@ -197,7 +197,7 @@ export default function MealsPage() {
             <tbody>
               {MEAL_SLOTS.map((slot) => (
                 <tr key={slot}>
-                  <td className="p-2 align-top text-xs font-medium text-neutral-500">
+                  <td className="p-2 align-top text-xs font-medium text-accent-900/55">
                     {SLOT_LABELS[slot]}
                   </td>
                   {weekDays.map((day) => {
@@ -214,7 +214,7 @@ export default function MealsPage() {
                       <td key={planDate} className="p-1 align-top">
                         {isEditing ? (
                           <div className="w-48 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
-                            <label className="mb-1 block text-xs font-medium text-neutral-500">
+                            <label className="mb-1 block text-xs font-medium text-accent-900/55">
                               Recipe
                             </label>
                             <select
@@ -232,7 +232,7 @@ export default function MealsPage() {
                                 </option>
                               ))}
                             </select>
-                            <label className="mb-1 block text-xs font-medium text-neutral-500">
+                            <label className="mb-1 block text-xs font-medium text-accent-900/55">
                               Or free text
                             </label>
                             <input
@@ -257,7 +257,7 @@ export default function MealsPage() {
                                 type="button"
                                 disabled={saving}
                                 onClick={saveCell}
-                                className="rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                                className="rounded-md bg-accent-600 hover:bg-accent-700 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
                               >
                                 Save
                               </button>
@@ -267,8 +267,8 @@ export default function MealsPage() {
                           <button
                             type="button"
                             onClick={() => openCellEditor(planDate, slot)}
-                            className={`h-16 w-full rounded-md border border-neutral-200 p-2 text-left text-xs hover:bg-neutral-50 ${
-                              displayText ? "text-neutral-900" : "text-neutral-400"
+                            className={`h-16 w-full rounded-md border border-accent-100 p-2 text-left text-xs hover:bg-neutral-50 ${
+                              displayText ? "text-[var(--foreground)]" : "text-neutral-400"
                             }`}
                           >
                             {displayText || "+ Add"}

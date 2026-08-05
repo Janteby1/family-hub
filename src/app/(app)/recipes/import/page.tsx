@@ -119,10 +119,10 @@ export default function ImportRecipePage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Import Recipe</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Import Recipe</h1>
 
-      <form onSubmit={handleFetch} className="mb-6 max-w-2xl rounded-xl border border-neutral-200 p-4">
-        <label className="mb-1 block text-sm font-medium text-neutral-900">Recipe URL</label>
+      <form onSubmit={handleFetch} className="mb-6 max-w-2xl rounded-xl border border-accent-100 p-4">
+        <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Recipe URL</label>
         <div className="flex gap-2">
           <input
             type="url"
@@ -135,7 +135,7 @@ export default function ImportRecipePage() {
           <button
             type="submit"
             disabled={fetching || !url.trim()}
-            className="shrink-0 rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="shrink-0 rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {fetching ? "Fetching…" : "Fetch"}
           </button>
@@ -150,8 +150,8 @@ export default function ImportRecipePage() {
       </form>
 
       <form onSubmit={handleSave} className="max-w-2xl space-y-4">
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Title</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Title</label>
           <input
             type="text"
             required
@@ -162,8 +162,8 @@ export default function ImportRecipePage() {
           />
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">
             Servings (optional)
           </label>
           <input
@@ -175,8 +175,8 @@ export default function ImportRecipePage() {
           />
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Ingredients</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Ingredients</label>
           <textarea
             value={ingredientsText}
             onChange={(e) => setIngredientsText(e.target.value)}
@@ -186,8 +186,8 @@ export default function ImportRecipePage() {
           />
         </section>
 
-        <section className="rounded-xl border border-neutral-200 p-4">
-          <label className="mb-1 block text-sm font-medium text-neutral-900">Steps</label>
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Steps</label>
           <textarea
             value={stepsText}
             onChange={(e) => setStepsText(e.target.value)}
@@ -203,7 +203,7 @@ export default function ImportRecipePage() {
           <button
             type="submit"
             disabled={saving || !title.trim()}
-            className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save recipe"}
           </button>
