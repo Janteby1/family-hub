@@ -50,6 +50,7 @@ export interface ChoreInstance {
   completed: boolean;
   completed_at: string | null;
   completed_by_member_id: string | null;
+  created_at: string;
 }
 
 export interface List {
@@ -102,6 +103,7 @@ export interface MealPlanEntry {
   meal_slot: MealSlot;
   recipe_id: string | null;
   free_text: string | null;
+  created_at: string;
 }
 
 export interface StarLedgerEntry {

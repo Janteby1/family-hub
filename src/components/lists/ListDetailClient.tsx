@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import type { List, ListItem } from "@/lib/types";
 
 interface ListDetailClientProps {
@@ -55,6 +56,14 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listId]);
+
+  // Live sync: items added/checked/removed on another device show up here
+  // without a manual refresh. Scoped to this list via an equality filter.
+  useRealtimeTable(
+    "list_items",
+    () => load(),
+    `list_id=eq.${listId}`
+  );
 
   async function handleAdd() {
     const label = newLabel.trim();

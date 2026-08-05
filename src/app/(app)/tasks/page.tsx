@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { ChoreInstance, ChoreTemplate, FamilyMember } from "@/lib/types";
 
 function todayISO() {
@@ -14,6 +16,7 @@ function todayISO() {
 }
 
 export default function TasksPage() {
+  useMarkModuleSeen("tasks");
   const { member: currentMember } = useCurrentMember();
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [templates, setTemplates] = useState<ChoreTemplate[]>([]);
@@ -72,6 +75,16 @@ export default function TasksPage() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  // Live sync: someone else claiming/completing a chore, or a new chore
+  // template being added, shows up here without a manual refresh. Scoped to
+  // today's occurrence_date since that's the only slice this page cares about.
+  useRealtimeTable(
+    "chore_instances",
+    () => loadAll(),
+    `occurrence_date=eq.${todayISO()}`
+  );
+  useRealtimeTable("chore_templates", () => loadAll());
 
   const instanceByTemplateId = useMemo(() => {
     const map = new Map<string, ChoreInstance>();

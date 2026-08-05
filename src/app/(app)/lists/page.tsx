@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { List } from "@/lib/types";
 
 export default function ListsPage() {
+  useMarkModuleSeen("lists");
   const router = useRouter();
   const [lists, setLists] = useState<List[]>([]);
   const [uncheckedCounts, setUncheckedCounts] = useState<Record<string, number>>({});

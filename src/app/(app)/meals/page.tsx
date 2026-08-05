@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { MealPlanEntry, MealSlot, Recipe } from "@/lib/types";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -49,6 +51,7 @@ function cellKey(planDate: string, slot: MealSlot): string {
 }
 
 export default function MealsPage() {
+  useMarkModuleSeen("meals");
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [entries, setEntries] = useState<MealPlanEntry[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -90,6 +93,13 @@ export default function MealsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Live sync: meal plan edits from another device refresh the visible week.
+  // Unfiltered because postgres_changes only supports equality filters, not
+  // the date-range this view needs.
+  useRealtimeTable("meal_plan_entries", () => {
+    fetchData();
+  });
 
   const entryByCell = useMemo(() => {
     const map = new Map<string, MealPlanEntry>();

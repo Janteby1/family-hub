@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   const choreInstances = (instances ?? []) as ChoreInstance[];
   const allLists = (lists ?? []) as List[];
 
-  let listItemsByList: Record<string, ListItem[]> = {};
+  const listItemsByList: Record<string, ListItem[]> = {};
   if (allLists.length > 0) {
     const { data: items } = await supabase
       .from("list_items")

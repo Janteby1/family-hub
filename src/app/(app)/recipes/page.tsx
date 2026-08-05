@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { Recipe } from "@/lib/types";
 
 export default function RecipesPage() {
+  useMarkModuleSeen("recipes");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,12 +34,20 @@ export default function RecipesPage() {
     <div className="p-4 md:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-neutral-900">Recipes</h1>
-        <Link
-          href="/recipes/new"
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          + Add recipe
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/recipes/import"
+            className="text-sm text-neutral-500 hover:underline"
+          >
+            Import from link
+          </Link>
+          <Link
+            href="/recipes/new"
+            className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            + Add recipe
+          </Link>
+        </div>
       </div>
 
       {loading ? (

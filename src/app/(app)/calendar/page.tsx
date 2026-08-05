@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { CalendarEvent, FamilyMember } from "@/lib/types";
 import { EventModal } from "@/components/calendar/EventModal";
 
@@ -41,6 +43,7 @@ function formatWeekRange(weekStart: Date): string {
 }
 
 export default function CalendarPage() {
+  useMarkModuleSeen("calendar");
   const { member } = useCurrentMember();
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -81,6 +84,13 @@ export default function CalendarPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Live sync: any calendar_events change (on this device or another) triggers
+  // a refetch of the current week. Unfiltered because postgres_changes only
+  // supports simple equality filters, not the date-range this view needs.
+  useRealtimeTable("calendar_events", () => {
+    fetchData();
+  });
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
