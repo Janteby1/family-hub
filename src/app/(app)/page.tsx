@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type {
   CalendarEvent,
   ChoreInstance,
@@ -51,63 +54,119 @@ function dayLabel(day: Date, todayKey: string): string {
     : day.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const weekDays = restOfWeekDays();
-  const todayKey = dateKey(weekDays[0]);
-  const rangeStartISO = weekDays[0].toISOString();
-  const rangeEndISO = addDays(weekDays[weekDays.length - 1], 1).toISOString();
-  const rangeStartDate = dateKey(weekDays[0]);
-  const rangeEndDate = dateKey(weekDays[weekDays.length - 1]);
+interface DashboardData {
+  familyMembers: FamilyMember[];
+  weekEvents: CalendarEvent[];
+  choreTemplates: ChoreTemplate[];
+  choreInstances: ChoreInstance[];
+  allLists: List[];
+  mealPlanEntries: MealPlanEntry[];
+  recipes: Recipe[];
+  listItemsByList: Record<string, ListItem[]>;
+}
 
-  const [
-    { data: members },
-    { data: events },
-    { data: templates },
-    { data: instances },
-    { data: lists },
-    { data: mealEntries },
-    { data: recipeRows },
-  ] = await Promise.all([
-    supabase.from("family_members").select("*").order("sort_order"),
-    supabase
-      .from("calendar_events")
-      .select("*")
-      .gte("starts_at", rangeStartISO)
-      .lt("starts_at", rangeEndISO)
-      .order("starts_at"),
-    supabase.from("chore_templates").select("*").eq("active", true),
-    supabase.from("chore_instances").select("*").eq("occurrence_date", todayKey),
-    supabase.from("lists").select("*").order("created_at"),
-    supabase
-      .from("meal_plan_entries")
-      .select("*")
-      .gte("plan_date", rangeStartDate)
-      .lte("plan_date", rangeEndDate),
-    supabase.from("recipes").select("id, title"),
-  ]);
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
 
-  const familyMembers = (members ?? []) as FamilyMember[];
-  const weekEvents = (events ?? []) as CalendarEvent[];
-  const choreTemplates = (templates ?? []) as ChoreTemplate[];
-  const choreInstances = (instances ?? []) as ChoreInstance[];
-  const allLists = (lists ?? []) as List[];
-  const mealPlanEntries = (mealEntries ?? []) as MealPlanEntry[];
-  const recipes = (recipeRows ?? []) as Recipe[];
+  useEffect(() => {
+    let mounted = true;
 
-  const listItemsByList: Record<string, ListItem[]> = {};
-  if (allLists.length > 0) {
-    const { data: items } = await supabase
-      .from("list_items")
-      .select("*")
-      .in("list_id", allLists.map((l) => l.id))
-      .eq("checked", false)
-      .order("created_at");
-    for (const item of (items ?? []) as ListItem[]) {
-      (listItemsByList[item.list_id] ??= []).push(item);
+    async function load() {
+      const supabase = createClient();
+      // Computed in the browser (not on the server) so "today"/day-grouping
+      // match the viewer's actual local timezone — a Server Component here
+      // would use Vercel's UTC clock and misfile evening events into the
+      // next calendar day.
+      const weekDays = restOfWeekDays();
+      const todayKey = dateKey(weekDays[0]);
+      const rangeStartISO = weekDays[0].toISOString();
+      const rangeEndISO = addDays(weekDays[weekDays.length - 1], 1).toISOString();
+      const rangeStartDate = dateKey(weekDays[0]);
+      const rangeEndDate = dateKey(weekDays[weekDays.length - 1]);
+
+      const [
+        { data: members },
+        { data: events },
+        { data: templates },
+        { data: instances },
+        { data: lists },
+        { data: mealEntries },
+        { data: recipeRows },
+      ] = await Promise.all([
+        supabase.from("family_members").select("*").order("sort_order"),
+        supabase
+          .from("calendar_events")
+          .select("*")
+          .gte("starts_at", rangeStartISO)
+          .lt("starts_at", rangeEndISO)
+          .order("starts_at"),
+        supabase.from("chore_templates").select("*").eq("active", true),
+        supabase.from("chore_instances").select("*").eq("occurrence_date", todayKey),
+        supabase.from("lists").select("*").order("created_at"),
+        supabase
+          .from("meal_plan_entries")
+          .select("*")
+          .gte("plan_date", rangeStartDate)
+          .lte("plan_date", rangeEndDate),
+        supabase.from("recipes").select("id, title"),
+      ]);
+
+      const allLists = (lists ?? []) as List[];
+      const listItemsByList: Record<string, ListItem[]> = {};
+      if (allLists.length > 0) {
+        const { data: items } = await supabase
+          .from("list_items")
+          .select("*")
+          .in("list_id", allLists.map((l) => l.id))
+          .eq("checked", false)
+          .order("created_at");
+        for (const item of (items ?? []) as ListItem[]) {
+          (listItemsByList[item.list_id] ??= []).push(item);
+        }
+      }
+
+      if (mounted) {
+        setData({
+          familyMembers: (members ?? []) as FamilyMember[],
+          weekEvents: (events ?? []) as CalendarEvent[],
+          choreTemplates: (templates ?? []) as ChoreTemplate[],
+          choreInstances: (instances ?? []) as ChoreInstance[],
+          allLists,
+          mealPlanEntries: (mealEntries ?? []) as MealPlanEntry[],
+          recipes: (recipeRows ?? []) as Recipe[],
+          listItemsByList,
+        });
+      }
     }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="p-4 md:p-8">
+        <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Today</h1>
+        <p className="text-sm text-accent-900/55">Loading…</p>
+      </div>
+    );
   }
 
+  const {
+    familyMembers,
+    weekEvents,
+    choreTemplates,
+    choreInstances,
+    allLists,
+    mealPlanEntries,
+    recipes,
+    listItemsByList,
+  } = data;
+
+  const weekDays = restOfWeekDays();
+  const todayKey = dateKey(weekDays[0]);
   const memberById = new Map(familyMembers.map((m) => [m.id, m]));
   const recipeById = new Map(recipes.map((r) => [r.id, r]));
 

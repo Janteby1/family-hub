@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -29,6 +29,8 @@ export default function TasksPage() {
   const [newUpForGrabs, setNewUpForGrabs] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
+  const [dragOrder, setDragOrder] = useState<string[] | null>(null);
+  const itemRefs = useRef(new Map<string, HTMLLIElement>());
 
   const loadAll = useCallback(async () => {
     const supabase = createClient();
@@ -169,21 +171,51 @@ export default function TasksPage() {
     );
   }
 
-  function handleDropOnChore(rows: { template: ChoreTemplate }[], targetTemplateId: string) {
-    if (!draggedTemplateId || draggedTemplateId === targetTemplateId) {
-      setDraggedTemplateId(null);
-      return;
-    }
-    const ids = rows.map((r) => r.template.id);
-    const fromIndex = ids.indexOf(draggedTemplateId);
-    const toIndex = ids.indexOf(targetTemplateId);
-    setDraggedTemplateId(null);
-    if (fromIndex === -1 || toIndex === -1) return;
+  // Pointer Events (not HTML5 drag-and-drop) so this works on touch devices —
+  // native `draggable`/dragstart/drop never fire on mobile Safari/Chrome.
+  function handlePointerDownOnHandle(
+    e: React.PointerEvent,
+    template: ChoreTemplate,
+    rows: { template: ChoreTemplate }[]
+  ) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDraggedTemplateId(template.id);
+    setDragOrder(rows.map((r) => r.template.id));
+  }
 
-    const reordered = [...ids];
-    reordered.splice(fromIndex, 1);
-    reordered.splice(toIndex, 0, draggedTemplateId);
-    reorderChores(reordered);
+  function handlePointerMoveWhileDragging(e: React.PointerEvent) {
+    if (!draggedTemplateId || !dragOrder) return;
+    const y = e.clientY;
+    let targetId: string | null = null;
+    for (const id of dragOrder) {
+      const el = itemRefs.current.get(id);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        targetId = id;
+        break;
+      }
+    }
+    if (!targetId || targetId === draggedTemplateId) return;
+
+    setDragOrder((prev) => {
+      if (!prev) return prev;
+      const ids = [...prev];
+      const from = ids.indexOf(draggedTemplateId);
+      const to = ids.indexOf(targetId!);
+      if (from === -1 || to === -1 || from === to) return prev;
+      ids.splice(from, 1);
+      ids.splice(to, 0, draggedTemplateId);
+      return ids;
+    });
+  }
+
+  function handlePointerUpFromDrag() {
+    if (draggedTemplateId && dragOrder) {
+      reorderChores(dragOrder);
+    }
+    setDraggedTemplateId(null);
+    setDragOrder(null);
   }
 
   async function deleteChore(template: ChoreTemplate) {
@@ -279,10 +311,19 @@ export default function TasksPage() {
     const memberTemplates = templates
       .filter((t) => t.assigned_member_id === member.id && !t.is_up_for_grabs)
       .sort((a, b) => a.sort_order - b.sort_order);
-    const rows = memberTemplates
+    let rows = memberTemplates
       .map((t) => ({ template: t, instance: instanceByTemplateId.get(t.id) }))
       .filter((r) => r.instance) as { template: ChoreTemplate; instance: ChoreInstance }[];
     const done = rows.filter((r) => r.instance.completed).length;
+
+    // While actively dragging within this member's list, reflect the live
+    // working order instead of the last-saved sort_order.
+    const isDraggingThisCard =
+      dragOrder !== null && dragOrder.length === rows.length && dragOrder.every((id) => rows.some((r) => r.template.id === id));
+    if (isDraggingThisCard) {
+      const byId = new Map(rows.map((r) => [r.template.id, r]));
+      rows = dragOrder!.map((id) => byId.get(id)!).filter(Boolean);
+    }
 
     return (
       <section key={member.id} className="rounded-xl border border-accent-100 p-4">
@@ -313,19 +354,23 @@ export default function TasksPage() {
             {rows.map(({ template, instance }) => (
               <li
                 key={template.id}
-                draggable
-                onDragStart={() => setDraggedTemplateId(template.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  handleDropOnChore(rows, template.id);
+                ref={(el) => {
+                  if (el) itemRefs.current.set(template.id, el);
+                  else itemRefs.current.delete(template.id);
                 }}
-                onDragEnd={() => setDraggedTemplateId(null)}
                 className={`group flex items-center gap-2 rounded-md ${
-                  draggedTemplateId === template.id ? "opacity-40" : ""
+                  draggedTemplateId === template.id ? "bg-accent-50 opacity-70" : ""
                 }`}
               >
-                <span className="cursor-grab text-neutral-300" title="Drag to reorder">
+                <span
+                  onPointerDown={(e) => handlePointerDownOnHandle(e, template, rows)}
+                  onPointerMove={handlePointerMoveWhileDragging}
+                  onPointerUp={handlePointerUpFromDrag}
+                  onPointerCancel={handlePointerUpFromDrag}
+                  className="cursor-grab touch-none select-none text-neutral-300"
+                  style={{ touchAction: "none" }}
+                  title="Drag to reorder"
+                >
                   ⠿
                 </span>
                 <input
