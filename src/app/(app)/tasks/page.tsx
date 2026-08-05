@@ -28,6 +28,7 @@ export default function TasksPage() {
   const [newAssignee, setNewAssignee] = useState<string>("");
   const [newUpForGrabs, setNewUpForGrabs] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
     const supabase = createClient();
@@ -152,6 +153,60 @@ export default function TasksPage() {
     }
   }
 
+  async function reorderChores(orderedTemplateIds: string[]) {
+    setTemplates((prev) => {
+      const orderIndex = new Map(orderedTemplateIds.map((id, index) => [id, index]));
+      return prev.map((t) =>
+        orderIndex.has(t.id) ? { ...t, sort_order: orderIndex.get(t.id)! } : t
+      );
+    });
+
+    const supabase = createClient();
+    await Promise.all(
+      orderedTemplateIds.map((id, index) =>
+        supabase.from("chore_templates").update({ sort_order: index }).eq("id", id)
+      )
+    );
+  }
+
+  function handleDropOnChore(rows: { template: ChoreTemplate }[], targetTemplateId: string) {
+    if (!draggedTemplateId || draggedTemplateId === targetTemplateId) {
+      setDraggedTemplateId(null);
+      return;
+    }
+    const ids = rows.map((r) => r.template.id);
+    const fromIndex = ids.indexOf(draggedTemplateId);
+    const toIndex = ids.indexOf(targetTemplateId);
+    setDraggedTemplateId(null);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const reordered = [...ids];
+    reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, draggedTemplateId);
+    reorderChores(reordered);
+  }
+
+  async function deleteChore(template: ChoreTemplate) {
+    if (!window.confirm(`Delete "${template.title}"?`)) return;
+
+    setTemplates((prev) => prev.filter((t) => t.id !== template.id));
+
+    const supabase = createClient();
+    // Soft delete (active = false) rather than a hard delete: chore_instances
+    // that were ever completed have star_ledger rows pointing at them, and a
+    // hard delete would either cascade away that reward history or hit a
+    // foreign-key error, depending on the row. Marking inactive just hides
+    // it from these lists going forward while preserving history.
+    const { error } = await supabase
+      .from("chore_templates")
+      .update({ active: false })
+      .eq("id", template.id);
+
+    if (error) {
+      setTemplates((prev) => [...prev, template]);
+    }
+  }
+
   async function addChore(e: React.FormEvent) {
     e.preventDefault();
     const title = newTitle.trim();
@@ -217,6 +272,93 @@ export default function TasksPage() {
   }
 
   const upForGrabsTemplates = templates.filter((t) => t.is_up_for_grabs);
+  const parents = members.filter((m) => m.role === "parent");
+  const kids = members.filter((m) => m.role === "child");
+
+  function renderMemberCard(member: FamilyMember) {
+    const memberTemplates = templates
+      .filter((t) => t.assigned_member_id === member.id && !t.is_up_for_grabs)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const rows = memberTemplates
+      .map((t) => ({ template: t, instance: instanceByTemplateId.get(t.id) }))
+      .filter((r) => r.instance) as { template: ChoreTemplate; instance: ChoreInstance }[];
+    const done = rows.filter((r) => r.instance.completed).length;
+
+    return (
+      <section key={member.id} className="rounded-xl border border-accent-100 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: member.color }} />
+            <h2 className="font-medium text-[var(--foreground)]">{member.display_name}</h2>
+          </div>
+          {rows.length > 0 && (
+            <span className="text-sm text-accent-900/55">
+              {done}/{rows.length}
+            </span>
+          )}
+        </div>
+        {rows.length === 0 ? (
+          <div className="rounded-md border border-dashed border-accent-200 p-3 text-center">
+            <p className="mb-2 text-sm text-accent-900/55">No chores yet.</p>
+            <button
+              type="button"
+              onClick={() => openAddFor(member.id)}
+              className="text-sm font-medium text-accent-600 hover:underline"
+            >
+              + Add a chore for {member.display_name}
+            </button>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {rows.map(({ template, instance }) => (
+              <li
+                key={template.id}
+                draggable
+                onDragStart={() => setDraggedTemplateId(template.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleDropOnChore(rows, template.id);
+                }}
+                onDragEnd={() => setDraggedTemplateId(null)}
+                className={`group flex items-center gap-2 rounded-md ${
+                  draggedTemplateId === template.id ? "opacity-40" : ""
+                }`}
+              >
+                <span className="cursor-grab text-neutral-300" title="Drag to reorder">
+                  ⠿
+                </span>
+                <input
+                  type="checkbox"
+                  checked={instance.completed}
+                  onChange={(e) => toggleInstance(instance, e.target.checked)}
+                  className="h-4 w-4 rounded border-neutral-300"
+                />
+                <span
+                  className={
+                    instance.completed
+                      ? "flex-1 text-sm text-neutral-400 line-through"
+                      : "flex-1 text-sm text-[var(--foreground)]"
+                  }
+                >
+                  {template.title}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => deleteChore(template)}
+                  className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                  aria-label={`Delete ${template.title}`}
+                  title="Delete chore"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -295,89 +437,38 @@ export default function TasksPage() {
         </form>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {members.map((member) => {
-          const memberTemplates = templates.filter(
-            (t) => t.assigned_member_id === member.id && !t.is_up_for_grabs
-          );
-          const rows = memberTemplates
-            .map((t) => ({ template: t, instance: instanceByTemplateId.get(t.id) }))
-            .filter((r) => r.instance) as { template: ChoreTemplate; instance: ChoreInstance }[];
-          const done = rows.filter((r) => r.instance.completed).length;
+      {parents.length > 0 && (
+        <div className="mb-6 grid gap-6 md:grid-cols-2">
+          {parents.map((member) => renderMemberCard(member))}
+        </div>
+      )}
 
-          return (
-            <section key={member.id} className="rounded-xl border border-accent-100 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: member.color }}
-                  />
-                  <h2 className="font-medium text-[var(--foreground)]">{member.display_name}</h2>
-                </div>
-                {rows.length > 0 && (
-                  <span className="text-sm text-accent-900/55">
-                    {done}/{rows.length}
-                  </span>
-                )}
-              </div>
-              {rows.length === 0 ? (
-                <div className="rounded-md border border-dashed border-accent-200 p-3 text-center">
-                  <p className="mb-2 text-sm text-accent-900/55">No chores yet.</p>
-                  <button
-                    type="button"
-                    onClick={() => openAddFor(member.id)}
-                    className="text-sm font-medium text-accent-600 hover:underline"
-                  >
-                    + Add a chore for {member.display_name}
-                  </button>
-                </div>
-              ) : (
-                <ul className="space-y-2">
-                  {rows.map(({ template, instance }) => (
-                    <li key={template.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={instance.completed}
-                        onChange={(e) => toggleInstance(instance, e.target.checked)}
-                        className="h-4 w-4 rounded border-neutral-300"
-                      />
-                      <span
-                        className={
-                          instance.completed
-                            ? "text-sm text-neutral-400 line-through"
-                            : "text-sm text-[var(--foreground)]"
-                        }
-                      >
-                        {template.title}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
+      {kids.length > 0 && (
+        <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {kids.map((member) => renderMemberCard(member))}
+        </div>
+      )}
 
-        <section className="rounded-xl border border-accent-100 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-medium text-[var(--foreground)]">Up for Grabs</h2>
-          </div>
-          {upForGrabsTemplates.length === 0 ? (
-            <p className="text-sm text-accent-900/55">Nothing up for grabs today.</p>
-          ) : (
-            <ul className="space-y-2">
-              {upForGrabsTemplates.map((template) => {
-                const instance = instanceByTemplateId.get(template.id);
-                if (!instance) return null;
-                const claimedBy = instance.claimed_by_member_id
-                  ? memberById.get(instance.claimed_by_member_id)
-                  : null;
+      <section className="rounded-xl border border-accent-100 p-4 md:max-w-md">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-medium text-[var(--foreground)]">Up for Grabs</h2>
+        </div>
+        {upForGrabsTemplates.length === 0 ? (
+          <p className="text-sm text-accent-900/55">Nothing up for grabs today.</p>
+        ) : (
+          <ul className="space-y-2">
+            {upForGrabsTemplates.map((template) => {
+              const instance = instanceByTemplateId.get(template.id);
+              if (!instance) return null;
+              const claimedBy = instance.claimed_by_member_id
+                ? memberById.get(instance.claimed_by_member_id)
+                : null;
 
-                if (!claimedBy) {
-                  return (
-                    <li key={template.id} className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-[var(--foreground)]">{template.title}</span>
+              if (!claimedBy) {
+                return (
+                  <li key={template.id} className="group flex items-center justify-between gap-2">
+                    <span className="text-sm text-[var(--foreground)]">{template.title}</span>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => claimInstance(instance)}
@@ -386,41 +477,59 @@ export default function TasksPage() {
                       >
                         Claim
                       </button>
-                    </li>
-                  );
-                }
-
-                return (
-                  <li key={template.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={instance.completed}
-                      onChange={(e) => toggleInstance(instance, e.target.checked)}
-                      className="h-4 w-4 rounded border-neutral-300"
-                    />
-                    <span
-                      className={
-                        instance.completed
-                          ? "text-sm text-neutral-400 line-through"
-                          : "text-sm text-[var(--foreground)]"
-                      }
-                    >
-                      {template.title}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-accent-900/55">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: claimedBy.color }}
-                      />
-                      {claimedBy.display_name}
-                    </span>
+                      <button
+                        type="button"
+                        onClick={() => deleteChore(template)}
+                        className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                        aria-label={`Delete ${template.title}`}
+                        title="Delete chore"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </li>
                 );
-              })}
-            </ul>
-          )}
-        </section>
-      </div>
+              }
+
+              return (
+                <li key={template.id} className="group flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={instance.completed}
+                    onChange={(e) => toggleInstance(instance, e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300"
+                  />
+                  <span
+                    className={
+                      instance.completed
+                        ? "flex-1 text-sm text-neutral-400 line-through"
+                        : "flex-1 text-sm text-[var(--foreground)]"
+                    }
+                  >
+                    {template.title}
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-accent-900/55">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: claimedBy.color }}
+                    />
+                    {claimedBy.display_name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => deleteChore(template)}
+                    className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                    aria-label={`Delete ${template.title}`}
+                    title="Delete chore"
+                  >
+                    Delete
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export function EventModal({
   const [location, setLocation] = useState("");
   const [allDay, setAllDay] = useState(false);
   const [startDate, setStartDate] = useState(defaultDate);
-  const [startTime, setStartTime] = useState("09:00");
+  const [startTime, setStartTime] = useState("20:00");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [assignedMemberId, setAssignedMemberId] = useState("");
@@ -81,7 +81,7 @@ export function EventModal({
       setLocation("");
       setAllDay(false);
       setStartDate(defaultDate);
-      setStartTime("09:00");
+      setStartTime("20:00");
       setEndDate("");
       setEndTime("");
       setAssignedMemberId("");
