@@ -1,0 +1,278 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { MealPlanEntry, MealSlot, Recipe } from "@/lib/types";
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+const SLOT_LABELS: Record<MealSlot, string> = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
+  snack: "Snack",
+};
+
+function startOfWeek(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function dateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatWeekRange(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6);
+  const startLabel = weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const endLabel = weekEnd.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${startLabel} – ${endLabel}`;
+}
+
+function cellKey(planDate: string, slot: MealSlot): string {
+  return `${planDate}__${slot}`;
+}
+
+export default function MealsPage() {
+  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
+  const [entries, setEntries] = useState<MealPlanEntry[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingCell, setEditingCell] = useState<{ planDate: string; slot: MealSlot } | null>(
+    null
+  );
+  const [editFreeText, setEditFreeText] = useState("");
+  const [editRecipeId, setEditRecipeId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart]
+  );
+
+  const recipeById = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const rangeStart = dateKey(weekStart);
+    const rangeEnd = dateKey(addDays(weekStart, 6));
+
+    const [{ data: entryRows }, { data: recipeRows }] = await Promise.all([
+      supabase
+        .from("meal_plan_entries")
+        .select("*")
+        .gte("plan_date", rangeStart)
+        .lte("plan_date", rangeEnd),
+      supabase.from("recipes").select("id, title").order("title"),
+    ]);
+
+    setEntries((entryRows ?? []) as MealPlanEntry[]);
+    setRecipes((recipeRows ?? []) as Recipe[]);
+    setLoading(false);
+  }, [weekStart]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const entryByCell = useMemo(() => {
+    const map = new Map<string, MealPlanEntry>();
+    for (const entry of entries) {
+      map.set(cellKey(entry.plan_date, entry.meal_slot), entry);
+    }
+    return map;
+  }, [entries]);
+
+  function openCellEditor(planDate: string, slot: MealSlot) {
+    const existing = entryByCell.get(cellKey(planDate, slot));
+    setEditFreeText(existing?.free_text ?? "");
+    setEditRecipeId(existing?.recipe_id ?? "");
+    setEditingCell({ planDate, slot });
+  }
+
+  function closeEditor() {
+    setEditingCell(null);
+    setEditFreeText("");
+    setEditRecipeId("");
+  }
+
+  async function saveCell() {
+    if (!editingCell) return;
+    setSaving(true);
+    const supabase = createClient();
+    const { planDate, slot } = editingCell;
+
+    const recipe_id = editRecipeId || null;
+    const free_text = recipe_id ? null : editFreeText.trim() || null;
+
+    await supabase.from("meal_plan_entries").upsert(
+      { plan_date: planDate, meal_slot: slot, recipe_id, free_text },
+      { onConflict: "plan_date,meal_slot" }
+    );
+
+    setSaving(false);
+    closeEditor();
+    fetchData();
+  }
+
+  const today = new Date();
+
+  return (
+    <div className="p-4 md:p-8">
+      <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Meal Planner</h1>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setWeekStart((prev) => addDays(prev, -7))}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekStart(startOfWeek(new Date()))}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeekStart((prev) => addDays(prev, 7))}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Next
+          </button>
+        </div>
+        <span className="text-sm font-medium text-neutral-700">{formatWeekRange(weekStart)}</span>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-neutral-500">Loading...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-collapse">
+            <thead>
+              <tr>
+                <th className="w-24 p-2 text-left text-xs font-medium text-neutral-500"> </th>
+                {weekDays.map((day) => {
+                  const isToday = dateKey(day) === dateKey(today);
+                  return (
+                    <th key={dateKey(day)} className="p-2 text-left text-xs font-medium">
+                      <span className={isToday ? "text-neutral-900" : "text-neutral-500"}>
+                        {DAY_LABELS[day.getDay()]} {day.getDate()}
+                      </span>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {MEAL_SLOTS.map((slot) => (
+                <tr key={slot}>
+                  <td className="p-2 align-top text-xs font-medium text-neutral-500">
+                    {SLOT_LABELS[slot]}
+                  </td>
+                  {weekDays.map((day) => {
+                    const planDate = dateKey(day);
+                    const entry = entryByCell.get(cellKey(planDate, slot));
+                    const recipeTitle = entry?.recipe_id
+                      ? recipeById.get(entry.recipe_id)?.title
+                      : null;
+                    const displayText = recipeTitle ?? entry?.free_text ?? "";
+                    const isEditing =
+                      editingCell?.planDate === planDate && editingCell?.slot === slot;
+
+                    return (
+                      <td key={planDate} className="p-1 align-top">
+                        {isEditing ? (
+                          <div className="w-48 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
+                            <label className="mb-1 block text-xs font-medium text-neutral-500">
+                              Recipe
+                            </label>
+                            <select
+                              value={editRecipeId}
+                              onChange={(e) => {
+                                setEditRecipeId(e.target.value);
+                                if (e.target.value) setEditFreeText("");
+                              }}
+                              className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
+                            >
+                              <option value="">None</option>
+                              {recipes.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.title}
+                                </option>
+                              ))}
+                            </select>
+                            <label className="mb-1 block text-xs font-medium text-neutral-500">
+                              Or free text
+                            </label>
+                            <input
+                              type="text"
+                              value={editFreeText}
+                              onChange={(e) => {
+                                setEditFreeText(e.target.value);
+                                if (e.target.value) setEditRecipeId("");
+                              }}
+                              placeholder="e.g. Leftovers"
+                              className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
+                            />
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={closeEditor}
+                                className="rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                disabled={saving}
+                                onClick={saveCell}
+                                className="rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openCellEditor(planDate, slot)}
+                            className={`h-16 w-full rounded-md border border-neutral-200 p-2 text-left text-xs hover:bg-neutral-50 ${
+                              displayText ? "text-neutral-900" : "text-neutral-400"
+                            }`}
+                          >
+                            {displayText || "+ Add"}
+                          </button>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
