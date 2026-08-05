@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentMember } from "@/hooks/useCurrentMember";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { MealPlanEntry, MealSlot, Recipe } from "@/lib/types";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+// Snacks are intentionally excluded from the planner grid (still a valid
+// meal_slot value in the DB, just not surfaced here).
+const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
 const SLOT_LABELS: Record<MealSlot, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
@@ -52,6 +55,7 @@ function cellKey(planDate: string, slot: MealSlot): string {
 
 export default function MealsPage() {
   useMarkModuleSeen("meals");
+  const { member } = useCurrentMember();
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [entries, setEntries] = useState<MealPlanEntry[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -62,6 +66,9 @@ export default function MealsPage() {
   const [editFreeText, setEditFreeText] = useState("");
   const [editRecipeId, setEditRecipeId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [ingredientsText, setIngredientsText] = useState("");
+  const [addingIngredients, setAddingIngredients] = useState(false);
+  const [ingredientsMessage, setIngredientsMessage] = useState<string | null>(null);
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -113,6 +120,8 @@ export default function MealsPage() {
     const existing = entryByCell.get(cellKey(planDate, slot));
     setEditFreeText(existing?.free_text ?? "");
     setEditRecipeId(existing?.recipe_id ?? "");
+    setIngredientsText("");
+    setIngredientsMessage(null);
     setEditingCell({ planDate, slot });
   }
 
@@ -120,6 +129,82 @@ export default function MealsPage() {
     setEditingCell(null);
     setEditFreeText("");
     setEditRecipeId("");
+    setIngredientsText("");
+    setIngredientsMessage(null);
+  }
+
+  async function addIngredientsToGroceryList() {
+    const lines = ingredientsText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+
+    setAddingIngredients(true);
+    setIngredientsMessage(null);
+    const supabase = createClient();
+
+    let { data: groceryList } = await supabase
+      .from("lists")
+      .select("*")
+      .eq("list_type", "grocery")
+      .maybeSingle();
+
+    if (!groceryList) {
+      const { data: newList, error: createListError } = await supabase
+        .from("lists")
+        .insert({ name: "Grocery List", list_type: "grocery" })
+        .select()
+        .single();
+      if (createListError || !newList) {
+        setIngredientsMessage(createListError?.message ?? "Failed to create grocery list.");
+        setAddingIngredients(false);
+        return;
+      }
+      groceryList = newList;
+    }
+
+    const { data: existingItems } = await supabase
+      .from("list_items")
+      .select("normalized_label")
+      .eq("list_id", groceryList.id);
+
+    const existingLabels = new Set(
+      (existingItems ?? [])
+        .map((item) => item.normalized_label)
+        .filter((label): label is string => !!label)
+    );
+
+    const rowsToInsert = [];
+    for (const line of lines) {
+      const normalized = line.toLowerCase();
+      if (existingLabels.has(normalized)) continue;
+      existingLabels.add(normalized);
+      rowsToInsert.push({
+        list_id: groceryList.id,
+        label: line,
+        normalized_label: normalized,
+        added_by_member_id: member?.id ?? null,
+        source: "manual" as const,
+      });
+    }
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertError } = await supabase.from("list_items").insert(rowsToInsert);
+      if (insertError) {
+        setIngredientsMessage(insertError.message);
+        setAddingIngredients(false);
+        return;
+      }
+    }
+
+    setIngredientsMessage(
+      rowsToInsert.length > 0
+        ? `Added ${rowsToInsert.length} ingredient${rowsToInsert.length === 1 ? "" : "s"} to Grocery List`
+        : "Already on the list"
+    );
+    setIngredientsText("");
+    setAddingIngredients(false);
   }
 
   async function saveCell() {
@@ -213,7 +298,7 @@ export default function MealsPage() {
                     return (
                       <td key={planDate} className="p-1 align-top">
                         {isEditing ? (
-                          <div className="w-48 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
+                          <div className="w-56 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
                             <label className="mb-1 block text-xs font-medium text-accent-900/55">
                               Recipe
                             </label>
@@ -261,6 +346,30 @@ export default function MealsPage() {
                               >
                                 Save
                               </button>
+                            </div>
+
+                            <div className="mt-3 border-t border-neutral-100 pt-2">
+                              <label className="mb-1 block text-xs font-medium text-accent-900/55">
+                                Add ingredients to grocery list
+                              </label>
+                              <textarea
+                                value={ingredientsText}
+                                onChange={(e) => setIngredientsText(e.target.value)}
+                                rows={3}
+                                placeholder={"One per line, e.g.\nGround beef\nTaco shells"}
+                                className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={addIngredientsToGroceryList}
+                                disabled={addingIngredients || !ingredientsText.trim()}
+                                className="w-full rounded-md border border-accent-200 px-2 py-1 text-xs font-medium text-accent-900/80 hover:bg-accent-50 disabled:opacity-50"
+                              >
+                                {addingIngredients ? "Adding..." : "+ Add to grocery list"}
+                              </button>
+                              {ingredientsMessage && (
+                                <p className="mt-1 text-xs text-accent-900/55">{ingredientsMessage}</p>
+                              )}
                             </div>
                           </div>
                         ) : (

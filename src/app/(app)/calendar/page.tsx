@@ -10,7 +10,7 @@ import type { CalendarEvent, FamilyMember } from "@/lib/types";
 import { EventModal } from "@/components/calendar/EventModal";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-type ViewMode = "week" | "month";
+type ViewMode = "week" | "twoWeek" | "month";
 
 function startOfWeek(date: Date): Date {
   const d = new Date(date);
@@ -40,10 +40,10 @@ function dateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatWeekRange(weekStart: Date): string {
-  const weekEnd = addDays(weekStart, 6);
-  const startLabel = weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const endLabel = weekEnd.toLocaleDateString(undefined, {
+function formatRange(rangeStart: Date, days: number): string {
+  const rangeEnd = addDays(rangeStart, days - 1);
+  const startLabel = rangeStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const endLabel = rangeEnd.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -69,12 +69,13 @@ export default function CalendarPage() {
   // months fill the grid rather than leaving ragged edges.
   const monthGridStart = useMemo(() => startOfWeek(monthAnchor), [monthAnchor]);
 
-  const rangeStart = viewMode === "week" ? weekStart : monthGridStart;
-  const rangeEnd = viewMode === "week" ? addDays(weekStart, 7) : addDays(monthGridStart, 42);
+  const cardDayCount = viewMode === "twoWeek" ? 14 : 7;
+  const rangeStart = viewMode === "month" ? monthGridStart : weekStart;
+  const rangeEnd = viewMode === "month" ? addDays(monthGridStart, 42) : addDays(weekStart, cardDayCount);
 
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
+  const cardDays = useMemo(
+    () => Array.from({ length: cardDayCount }, (_, i) => addDays(weekStart, i)),
+    [weekStart, cardDayCount]
   );
 
   const monthDays = useMemo(
@@ -154,13 +155,13 @@ export default function CalendarPage() {
   }
 
   function goPrev() {
-    if (viewMode === "week") setWeekStart((prev) => addDays(prev, -7));
-    else setMonthAnchor((prev) => addMonths(prev, -1));
+    if (viewMode === "month") setMonthAnchor((prev) => addMonths(prev, -1));
+    else setWeekStart((prev) => addDays(prev, -cardDayCount));
   }
 
   function goNext() {
-    if (viewMode === "week") setWeekStart((prev) => addDays(prev, 7));
-    else setMonthAnchor((prev) => addMonths(prev, 1));
+    if (viewMode === "month") setMonthAnchor((prev) => addMonths(prev, 1));
+    else setWeekStart((prev) => addDays(prev, cardDayCount));
   }
 
   function goToday() {
@@ -170,9 +171,9 @@ export default function CalendarPage() {
 
   const today = new Date();
   const rangeLabel =
-    viewMode === "week"
-      ? formatWeekRange(weekStart)
-      : monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    viewMode === "month"
+      ? monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+      : formatRange(weekStart, cardDayCount);
 
   return (
     <div className="p-4 md:p-8">
@@ -221,6 +222,15 @@ export default function CalendarPage() {
           </button>
           <button
             type="button"
+            onClick={() => setViewMode("twoWeek")}
+            className={`rounded px-3 py-1 text-sm font-medium ${
+              viewMode === "twoWeek" ? "bg-accent-600 text-white" : "text-accent-900/70"
+            }`}
+          >
+            2 Weeks
+          </button>
+          <button
+            type="button"
             onClick={() => setViewMode("month")}
             className={`rounded px-3 py-1 text-sm font-medium ${
               viewMode === "month" ? "bg-accent-600 text-white" : "text-accent-900/70"
@@ -233,9 +243,9 @@ export default function CalendarPage() {
 
       {loading ? (
         <p className="text-sm text-accent-900/55">Loading...</p>
-      ) : viewMode === "week" ? (
+      ) : viewMode !== "month" ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-7 md:gap-2">
-          {weekDays.map((day) => {
+          {cardDays.map((day) => {
             const key = dateKey(day);
             const dayEvents = eventsByDay.get(key) ?? [];
             const isToday = key === dateKey(today);
