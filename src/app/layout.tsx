@@ -19,7 +19,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Family Hub",
+  title: "Anteby Family Hub",
   description: "Shared calendar, chores, lists, meal planning, and recipes for the family.",
   manifest: "/manifest.json",
   icons: {
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Family Hub",
+    title: "Anteby Family Hub",
   },
 };
 

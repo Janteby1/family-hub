@@ -170,6 +170,10 @@ export default function CalendarPage() {
   }
 
   const today = new Date();
+  const todayKey = dateKey(today);
+  // Week/2-Week views are a "what's coming up" glance, not a history log —
+  // Month view (unfiltered below) is where past days stay visible.
+  const visibleCardDays = cardDays.filter((day) => dateKey(day) >= todayKey);
   const rangeLabel =
     viewMode === "month"
       ? monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
@@ -244,8 +248,11 @@ export default function CalendarPage() {
       {loading ? (
         <p className="text-sm text-accent-900/55">Loading...</p>
       ) : viewMode !== "month" ? (
+        visibleCardDays.length === 0 ? (
+          <p className="text-sm text-accent-900/55">Nothing left this range — try Next.</p>
+        ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-7 md:gap-2">
-          {cardDays.map((day) => {
+          {visibleCardDays.map((day) => {
             const key = dateKey(day);
             const dayEvents = eventsByDay.get(key) ?? [];
             const isToday = key === dateKey(today);
@@ -312,6 +319,7 @@ export default function CalendarPage() {
             );
           })}
         </div>
+        )
       ) : (
         <div>
           <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-accent-100 bg-accent-100">

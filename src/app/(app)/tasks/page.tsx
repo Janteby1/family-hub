@@ -15,6 +15,28 @@ function todayISO() {
   return `${year}-${month}-${day}`;
 }
 
+const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function isDueOn(template: Pick<ChoreTemplate, "recurrence" | "recurrence_meta">, date: Date): boolean {
+  const dow = date.getDay();
+  switch (template.recurrence) {
+    case "daily":
+      return true;
+    case "weekdays":
+      return dow >= 1 && dow <= 5;
+    case "weekends":
+      return dow === 0 || dow === 6;
+    case "weekly": {
+      const meta = template.recurrence_meta as { weekday?: number } | null;
+      return meta?.weekday === dow;
+    }
+    case "none":
+      return false;
+    default:
+      return true;
+  }
+}
+
 export default function TasksPage() {
   useMarkModuleSeen("tasks");
   const { member: currentMember } = useCurrentMember();
@@ -27,6 +49,8 @@ export default function TasksPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newAssignee, setNewAssignee] = useState<string>("");
   const [newUpForGrabs, setNewUpForGrabs] = useState(false);
+  const [newRecurrence, setNewRecurrence] = useState<"daily" | "weekdays" | "weekly">("daily");
+  const [newWeeklyDay, setNewWeeklyDay] = useState<number>(() => new Date().getDay());
   const [saving, setSaving] = useState(false);
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
   const [dragOrder, setDragOrder] = useState<string[] | null>(null);
@@ -50,10 +74,15 @@ export default function TasksPage() {
       .eq("occurrence_date", today);
     let allInstances = (instancesData ?? []) as ChoreInstance[];
 
-    // Lazily backfill today's instances for any active template that doesn't
-    // have one yet (stand-in for the not-yet-built cron job).
+    // Lazily backfill today's instances for any active template that's due
+    // today and doesn't have one yet (stand-in for the not-yet-built cron
+    // job). A weekly/weekdays-only chore that isn't due today simply won't
+    // get an instance, so it won't show up until its next scheduled day.
+    const todayDate = new Date();
     const existingTemplateIds = new Set(allInstances.map((i) => i.template_id));
-    const missing = allTemplates.filter((t) => !existingTemplateIds.has(t.id));
+    const missing = allTemplates.filter(
+      (t) => !existingTemplateIds.has(t.id) && isDueOn(t, todayDate)
+    );
     if (missing.length > 0) {
       const { data: inserted } = await supabase
         .from("chore_instances")
@@ -252,7 +281,8 @@ export default function TasksPage() {
       title,
       assigned_member_id: newUpForGrabs ? null : newAssignee,
       is_up_for_grabs: newUpForGrabs,
-      recurrence: "daily" as const,
+      recurrence: newRecurrence,
+      recurrence_meta: newRecurrence === "weekly" ? { weekday: newWeeklyDay } : null,
       star_value: 1,
       active: true,
     };
@@ -270,20 +300,24 @@ export default function TasksPage() {
 
     const newTemplate = template as ChoreTemplate;
 
-    const { data: instance } = await supabase
-      .from("chore_instances")
-      .insert({ template_id: newTemplate.id, occurrence_date: todayISO() })
-      .select("*")
-      .single();
-
     setTemplates((prev) => [...prev, newTemplate]);
-    if (instance) {
-      setInstances((prev) => [...prev, instance as ChoreInstance]);
+
+    if (isDueOn(newTemplate, new Date())) {
+      const { data: instance } = await supabase
+        .from("chore_instances")
+        .insert({ template_id: newTemplate.id, occurrence_date: todayISO() })
+        .select("*")
+        .single();
+      if (instance) {
+        setInstances((prev) => [...prev, instance as ChoreInstance]);
+      }
     }
 
     setNewTitle("");
     setNewAssignee("");
     setNewUpForGrabs(false);
+    setNewRecurrence("daily");
+    setNewWeeklyDay(new Date().getDay());
     setAddOpen(false);
     setSaving(false);
   }
@@ -300,6 +334,8 @@ export default function TasksPage() {
   function openAddFor(memberId: string) {
     setNewUpForGrabs(false);
     setNewAssignee(memberId);
+    setNewRecurrence("daily");
+    setNewWeeklyDay(new Date().getDay());
     setAddOpen(true);
   }
 
@@ -454,6 +490,34 @@ export default function TasksPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex-1">
+            <label className="mb-1 block text-xs font-medium text-accent-900/55">Repeat</label>
+            <div className="flex gap-2">
+              <select
+                value={newRecurrence}
+                onChange={(e) => setNewRecurrence(e.target.value as "daily" | "weekdays" | "weekly")}
+                className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekdays">Every weekday</option>
+                <option value="weekly">Weekly</option>
+              </select>
+              {newRecurrence === "weekly" && (
+                <select
+                  value={newWeeklyDay}
+                  onChange={(e) => setNewWeeklyDay(Number(e.target.value))}
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+                >
+                  {WEEKDAY_LABELS.map((label, index) => (
+                    <option key={label} value={index}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 pb-2">
