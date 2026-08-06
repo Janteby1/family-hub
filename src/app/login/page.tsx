@@ -36,9 +36,14 @@ export default function LoginPage() {
       >
         <h1 className="text-xl font-semibold text-[var(--foreground)]">Family Hub</h1>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-neutral-700">Email</label>
+          <label htmlFor="email" className="text-sm font-medium text-neutral-700">
+            Email
+          </label>
           <input
+            id="email"
+            name="email"
             type="email"
+            autoComplete="username"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -46,9 +51,14 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-neutral-700">Password</label>
+          <label htmlFor="password" className="text-sm font-medium text-neutral-700">
+            Password
+          </label>
           <input
+            id="password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
