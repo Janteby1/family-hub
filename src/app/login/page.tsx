@@ -34,7 +34,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-accent-100 bg-white p-8 shadow-sm"
       >
-        <h1 className="text-xl font-semibold text-[var(--foreground)]">Family Hub</h1>
+        <h1 className="text-xl font-semibold text-[var(--foreground)]">Anteby Family Hub</h1>
         <div className="space-y-1">
           <label htmlFor="email" className="text-sm font-medium text-neutral-700">
             Email
