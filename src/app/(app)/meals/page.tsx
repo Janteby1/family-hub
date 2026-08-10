@@ -134,8 +134,11 @@ export default function MealsPage() {
   }
 
   async function addIngredientsToGroceryList() {
+    // Split on newlines AND commas — this is a quick shopping-list-style
+    // box, not structured recipe ingredients, so "Lemons, Capers, Wine" on
+    // one line should become three items, not one.
     const lines = ingredientsText
-      .split("\n")
+      .split(/[\n,]+/)
       .map((line) => line.trim())
       .filter(Boolean);
     if (lines.length === 0) return;
