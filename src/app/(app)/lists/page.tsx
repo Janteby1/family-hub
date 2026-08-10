@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
-import type { List } from "@/lib/types";
+import type { List, ListItem } from "@/lib/types";
 
 export default function ListsPage() {
   useMarkModuleSeen("lists");
   const router = useRouter();
   const [lists, setLists] = useState<List[]>([]);
-  const [uncheckedCounts, setUncheckedCounts] = useState<Record<string, number>>({});
+  const [itemsByList, setItemsByList] = useState<Record<string, ListItem[]>>({});
+  const [checkedCounts, setCheckedCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [newListName, setNewListName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -35,19 +36,25 @@ export default function ListsPage() {
     const allLists = (listsData ?? []) as List[];
     setLists(allLists);
 
-    const counts: Record<string, number> = {};
+    const unchecked: Record<string, ListItem[]> = {};
+    const checkedCounts: Record<string, number> = {};
     if (allLists.length > 0) {
       const { data: items } = await supabase
         .from("list_items")
-        .select("list_id")
-        .eq("checked", false)
-        .in("list_id", allLists.map((l) => l.id));
+        .select("*")
+        .in("list_id", allLists.map((l) => l.id))
+        .order("created_at");
 
-      for (const item of (items ?? []) as { list_id: string }[]) {
-        counts[item.list_id] = (counts[item.list_id] ?? 0) + 1;
+      for (const item of (items ?? []) as ListItem[]) {
+        if (item.checked) {
+          checkedCounts[item.list_id] = (checkedCounts[item.list_id] ?? 0) + 1;
+        } else {
+          (unchecked[item.list_id] ??= []).push(item);
+        }
       }
     }
-    setUncheckedCounts(counts);
+    setItemsByList(unchecked);
+    setCheckedCounts(checkedCounts);
     setLoading(false);
   }
 
@@ -121,18 +128,41 @@ export default function ListsPage() {
         <p className="text-sm text-accent-900/55">No lists yet. Create one above.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {lists.map((list) => (
-            <Link
-              key={list.id}
-              href={`/lists/${list.id}`}
-              className="rounded-xl border border-accent-100 p-4 hover:bg-neutral-50"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-[var(--foreground)]">{list.name}</span>
-                <span className="text-xs text-accent-900/55">{uncheckedCounts[list.id] ?? 0} left</span>
-              </div>
-            </Link>
-          ))}
+          {lists.map((list) => {
+            const items = itemsByList[list.id] ?? [];
+            const checkedCount = checkedCounts[list.id] ?? 0;
+            return (
+              <Link
+                key={list.id}
+                href={`/lists/${list.id}`}
+                className="rounded-xl border border-accent-100 p-4 hover:bg-neutral-50"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-medium text-[var(--foreground)]">{list.name}</span>
+                  <span className="text-xs text-accent-900/55">{items.length} left</span>
+                </div>
+                {items.length === 0 ? (
+                  <p className="text-xs text-neutral-400">Nothing on this list.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {items.map((item) => (
+                      <li key={item.id} className="truncate text-sm text-neutral-700">
+                        {item.label}
+                        {item.quantity && (
+                          <span className="text-accent-900/55"> — {item.quantity}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {checkedCount > 0 && (
+                  <p className="mt-2 text-xs text-accent-900/55">
+                    {checkedCount} checked off
+                  </p>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
