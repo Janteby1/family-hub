@@ -49,7 +49,9 @@ export default function TasksPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newAssignee, setNewAssignee] = useState<string>("");
   const [newUpForGrabs, setNewUpForGrabs] = useState(false);
-  const [newRecurrence, setNewRecurrence] = useState<"daily" | "weekdays" | "weekly">("daily");
+  const [newRecurrence, setNewRecurrence] = useState<"daily" | "weekdays" | "weekly" | "none">(
+    "daily"
+  );
   const [newWeeklyDay, setNewWeeklyDay] = useState<number>(() => new Date().getDay());
   const [saving, setSaving] = useState(false);
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
@@ -302,7 +304,9 @@ export default function TasksPage() {
 
     setTemplates((prev) => [...prev, newTemplate]);
 
-    if (isDueOn(newTemplate, new Date())) {
+    // A one-time ("none") chore has no recurring schedule to match against —
+    // it's always due the day it's created, then never backfilled again.
+    if (newRecurrence === "none" || isDueOn(newTemplate, new Date())) {
       const { data: instance } = await supabase
         .from("chore_instances")
         .insert({ template_id: newTemplate.id, occurrence_date: todayISO() })
@@ -497,12 +501,15 @@ export default function TasksPage() {
             <div className="flex gap-2">
               <select
                 value={newRecurrence}
-                onChange={(e) => setNewRecurrence(e.target.value as "daily" | "weekdays" | "weekly")}
+                onChange={(e) =>
+                  setNewRecurrence(e.target.value as "daily" | "weekdays" | "weekly" | "none")
+                }
                 className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
               >
                 <option value="daily">Daily</option>
                 <option value="weekdays">Every weekday</option>
                 <option value="weekly">Weekly</option>
+                <option value="none">Just once</option>
               </select>
               {newRecurrence === "weekly" && (
                 <select
