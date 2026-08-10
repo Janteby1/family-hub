@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { APP_NAME } from "@/lib/app-name";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,9 +20,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Anteby Family Hub",
+  title: APP_NAME,
   description: "Shared calendar, chores, lists, meal planning, and recipes for the family.",
-  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Anteby Family Hub",
+    title: APP_NAME,
   },
 };
 
