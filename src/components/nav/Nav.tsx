@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { APP_NAME } from "@/lib/app-name";
 import type { BadgeModule } from "@/lib/types";
 import {
   HomeIcon,
@@ -38,7 +39,7 @@ export function Nav({ badgeCounts = {} }: { badgeCounts?: Partial<Record<BadgeMo
   return (
     <nav className="flex w-[72px] shrink-0 flex-col gap-1 border-r border-accent-200/60 bg-white/70 p-2 sm:w-56 sm:p-4">
       <div className="mb-2 hidden px-2 font-serif text-base font-semibold leading-tight text-accent-900 sm:mb-4 sm:block">
-        Anteby Family Hub
+        {APP_NAME}
       </div>
       {NAV_ITEMS.map((item) => {
         const active = pathname === item.href;
