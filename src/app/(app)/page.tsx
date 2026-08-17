@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { cleanupExpiredCheckedItems } from "@/lib/list-cleanup";
 import type {
   CalendarEvent,
   ChoreInstance,
@@ -20,6 +21,8 @@ const SLOT_LABELS: Record<MealSlot, string> = {
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snack",
+  dinner_kids: "Kids Dinner",
+  dinner_adults: "Adults Dinner",
 };
 
 function startOfToday(): Date {
@@ -73,6 +76,7 @@ export default function DashboardPage() {
 
     async function load() {
       const supabase = createClient();
+      await cleanupExpiredCheckedItems(supabase);
       // Computed in the browser (not on the server) so "today"/day-grouping
       // match the viewer's actual local timezone — a Server Component here
       // would use Vercel's UTC clock and misfile evening events into the

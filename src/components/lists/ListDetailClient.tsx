@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { cleanupExpiredCheckedItems } from "@/lib/list-cleanup";
 import type { List, ListItem } from "@/lib/types";
 
 interface ListDetailClientProps {
@@ -26,6 +27,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
   async function load() {
     setLoading(true);
     const supabase = createClient();
+    await cleanupExpiredCheckedItems(supabase);
 
     const [{ data: listData, error: listError }, { data: itemsData, error: itemsError }] = await Promise.all([
       supabase.from("lists").select("*").eq("id", listId).single(),
@@ -94,13 +96,14 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
   }
 
   async function handleToggle(item: ListItem) {
+    const nowChecked = !item.checked;
+    const patch = { checked: nowChecked, checked_at: nowChecked ? new Date().toISOString() : null };
+
     const supabase = createClient();
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, checked: !item.checked } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
     const { error: updateError } = await supabase
       .from("list_items")
-      .update({ checked: !item.checked })
+      .update(patch)
       .eq("id", item.id);
     if (updateError) {
       setError(updateError.message);
