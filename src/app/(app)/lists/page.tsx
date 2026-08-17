@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
+import { cleanupExpiredCheckedItems } from "@/lib/list-cleanup";
 import type { List, ListItem } from "@/lib/types";
 
 export default function ListsPage() {
@@ -21,6 +22,7 @@ export default function ListsPage() {
   async function load() {
     setLoading(true);
     const supabase = createClient();
+    await cleanupExpiredCheckedItems(supabase);
 
     const { data: listsData, error: listsError } = await supabase
       .from("lists")

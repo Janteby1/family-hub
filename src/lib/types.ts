@@ -68,6 +68,7 @@ export interface ListItem {
   normalized_label: string | null;
   quantity: string | null;
   checked: boolean;
+  checked_at: string | null;
   added_by_member_id: string | null;
   source: "manual" | "recipe_import";
   source_recipe_id: string | null;
@@ -95,7 +96,13 @@ export interface RecipeIngredient {
   sort_order: number;
 }
 
-export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealSlot =
+  | "breakfast"
+  | "lunch"
+  | "dinner"
+  | "snack"
+  | "dinner_kids"
+  | "dinner_adults";
 
 export interface MealPlanEntry {
   id: string;

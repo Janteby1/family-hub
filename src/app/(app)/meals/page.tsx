@@ -8,14 +8,17 @@ import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
 import type { MealPlanEntry, MealSlot, Recipe } from "@/lib/types";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-// Snacks are intentionally excluded from the planner grid (still a valid
-// meal_slot value in the DB, just not surfaced here).
-const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner"];
+// Breakfast/lunch/snack are intentionally excluded from the planner grid
+// (still valid meal_slot values in the DB, just not surfaced here) — the
+// grid is just two dinner rows, split by who it's for.
+const MEAL_SLOTS: MealSlot[] = ["dinner_kids", "dinner_adults"];
 const SLOT_LABELS: Record<MealSlot, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snack",
+  dinner_kids: "Kids Dinner",
+  dinner_adults: "Adults Dinner",
 };
 
 function startOfWeek(date: Date): Date {
