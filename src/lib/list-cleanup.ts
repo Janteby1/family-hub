@@ -8,5 +8,12 @@ const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
 export async function cleanupExpiredCheckedItems(supabase: SupabaseClient) {
   const cutoff = new Date(Date.now() - TWENTY_FOUR_HOURS_MS).toISOString();
-  await supabase.from("list_items").delete().eq("checked", true).lt("checked_at", cutoff);
+  // Items checked off before this feature existed have no checked_at at
+  // all — SQL's `< cutoff` never matches NULL, so those would otherwise
+  // linger forever. Treat "checked with no timestamp" as expired too.
+  await supabase
+    .from("list_items")
+    .delete()
+    .eq("checked", true)
+    .or(`checked_at.lt.${cutoff},checked_at.is.null`);
 }
