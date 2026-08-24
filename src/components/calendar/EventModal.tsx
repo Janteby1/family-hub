@@ -104,6 +104,11 @@ export function EventModal({
     let endsAt: Date | null = null;
     if (endDate) {
       endsAt = allDay ? combineDateTime(endDate, "00:00") : combineDateTime(endDate, endTime || startTime);
+      if (endsAt.getTime() < startsAt.getTime()) {
+        setError("End date/time can't be before the start.");
+        setSaving(false);
+        return;
+      }
     }
 
     const payload = {

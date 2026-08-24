@@ -89,12 +89,20 @@ export default function CalendarPage() {
     setLoading(true);
     const supabase = createClient();
 
+    const rangeStartISO = rangeStart.toISOString();
+    const rangeEndISO = rangeEnd.toISOString();
+
     const [{ data: eventRows }, { data: memberRows }] = await Promise.all([
       supabase
         .from("calendar_events")
         .select("*")
-        .gte("starts_at", rangeStart.toISOString())
-        .lt("starts_at", rangeEnd.toISOString())
+        // An event overlaps this range if it starts before the range ends,
+        // AND either it starts within the range OR it's a multi-day event
+        // that's still ongoing (ends_at falls at/after the range start) —
+        // otherwise an event that began last week but runs into this one
+        // would never be fetched at all.
+        .lt("starts_at", rangeEndISO)
+        .or(`starts_at.gte.${rangeStartISO},ends_at.gte.${rangeStartISO}`)
         .order("starts_at"),
       supabase.from("family_members").select("*").order("sort_order"),
     ]);
@@ -119,10 +127,24 @@ export default function CalendarPage() {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     for (const event of events) {
-      const key = dateKey(new Date(event.starts_at));
-      const list = map.get(key) ?? [];
-      list.push(event);
-      map.set(key, list);
+      const startDay = new Date(event.starts_at);
+      startDay.setHours(0, 0, 0, 0);
+      const rawEndDay = event.ends_at ? new Date(event.ends_at) : startDay;
+      rawEndDay.setHours(0, 0, 0, 0);
+      // Guard against bad data (an end date before the start date) — fall
+      // back to showing just the start day rather than vanishing entirely.
+      const endDay = rawEndDay.getTime() >= startDay.getTime() ? rawEndDay : startDay;
+
+      // Add the event to every day it spans, not just its start day — a
+      // 366-day cap just guards against a runaway loop on a malformed date.
+      let cursor = startDay;
+      for (let i = 0; cursor.getTime() <= endDay.getTime() && i < 366; i++) {
+        const key = dateKey(cursor);
+        const list = map.get(key) ?? [];
+        list.push(event);
+        map.set(key, list);
+        cursor = addDays(cursor, 1);
+      }
     }
     return map;
   }, [events]);
