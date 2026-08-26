@@ -115,6 +115,28 @@ export default function DashboardPage() {
         supabase.from("recipes").select("id, title"),
       ]);
 
+      const choreTemplates = (templates ?? []) as ChoreTemplate[];
+      let choreInstances = (instances ?? []) as ChoreInstance[];
+
+      // "Just once" chores stay visible until completed, not just on the day
+      // they were added — fetch their not-yet-completed instances regardless
+      // of occurrence_date so they don't drop off the dashboard after a day.
+      const onceTemplateIds = choreTemplates.filter((t) => t.recurrence === "none").map((t) => t.id);
+      if (onceTemplateIds.length > 0) {
+        const { data: onceInstances } = await supabase
+          .from("chore_instances")
+          .select("*")
+          .in("template_id", onceTemplateIds)
+          .eq("completed", false);
+        const alreadyIncluded = new Set(choreInstances.map((i) => i.id));
+        for (const instance of (onceInstances ?? []) as ChoreInstance[]) {
+          if (!alreadyIncluded.has(instance.id)) {
+            choreInstances.push(instance);
+            alreadyIncluded.add(instance.id);
+          }
+        }
+      }
+
       const allLists = (lists ?? []) as List[];
       const listItemsByList: Record<string, ListItem[]> = {};
       if (allLists.length > 0) {
@@ -133,8 +155,8 @@ export default function DashboardPage() {
         setData({
           familyMembers: (members ?? []) as FamilyMember[],
           weekEvents: (events ?? []) as CalendarEvent[],
-          choreTemplates: (templates ?? []) as ChoreTemplate[],
-          choreInstances: (instances ?? []) as ChoreInstance[],
+          choreTemplates,
+          choreInstances,
           allLists,
           mealPlanEntries: (mealEntries ?? []) as MealPlanEntry[],
           recipes: (recipeRows ?? []) as Recipe[],
