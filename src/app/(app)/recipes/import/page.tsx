@@ -15,6 +15,7 @@ export default function ImportRecipePage() {
   const [fetchMethod, setFetchMethod] = useState<"jsonld" | "llm" | "none" | null>(null);
 
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [servings, setServings] = useState("");
   const [ingredientsText, setIngredientsText] = useState("");
   const [stepsText, setStepsText] = useState("");
@@ -86,6 +87,7 @@ export default function ImportRecipePage() {
       .from("recipes")
       .insert({
         title: title.trim(),
+        description: description.trim() || null,
         servings: servings.trim() || null,
         source_url: url.trim() || null,
         steps,
@@ -159,6 +161,19 @@ export default function ImportRecipePage() {
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
             placeholder="e.g. Sunday Roast Chicken"
+          />
+        </section>
+
+        <section className="rounded-xl border border-accent-100 p-4">
+          <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">
+            Description (optional)
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            placeholder="A short summary of the dish"
           />
         </section>
 

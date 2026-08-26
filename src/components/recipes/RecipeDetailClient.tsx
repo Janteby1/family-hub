@@ -133,6 +133,9 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
       </Link>
 
       <h1 className="mb-1 text-2xl font-semibold text-[var(--foreground)]">{recipe.title}</h1>
+      {recipe.description && (
+        <p className="mb-2 text-sm text-[var(--foreground)]">{recipe.description}</p>
+      )}
       {recipe.servings && (
         <p className="mb-6 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
       )}

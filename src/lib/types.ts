@@ -78,6 +78,7 @@ export interface ListItem {
 export interface Recipe {
   id: string;
   title: string;
+  description: string | null;
   source_url: string | null;
   image_url: string | null;
   steps: string[];

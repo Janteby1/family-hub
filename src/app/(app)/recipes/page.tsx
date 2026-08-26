@@ -60,6 +60,9 @@ export default function RecipesPage() {
             <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
               <section className="rounded-xl border border-accent-100 p-4 hover:bg-neutral-50">
                 <h2 className="font-medium text-[var(--foreground)]">{recipe.title}</h2>
+                {recipe.description && (
+                  <p className="mt-1 line-clamp-2 text-sm text-accent-900/55">{recipe.description}</p>
+                )}
                 {recipe.servings && (
                   <p className="mt-1 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
                 )}
