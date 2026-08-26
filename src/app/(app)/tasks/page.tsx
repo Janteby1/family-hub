@@ -61,6 +61,7 @@ export default function TasksPage() {
   const loadAll = useCallback(async () => {
     const supabase = createClient();
     const today = todayISO();
+    const todayDate = new Date();
 
     const [{ data: membersData }, { data: templatesData }] = await Promise.all([
       supabase.from("family_members").select("*").order("sort_order"),
@@ -70,21 +71,47 @@ export default function TasksPage() {
     const allMembers = (membersData ?? []) as FamilyMember[];
     const allTemplates = (templatesData ?? []) as ChoreTemplate[];
 
-    const { data: instancesData } = await supabase
-      .from("chore_instances")
-      .select("*")
-      .eq("occurrence_date", today);
-    let allInstances = (instancesData ?? []) as ChoreInstance[];
+    // "Just once" chores aren't tied to a specific day the way recurring
+    // ones are — they should stay visible until someone actually checks
+    // them off, however many days that takes, not just on the day they
+    // were added. Recurring chores keep the existing today-only model.
+    const onceTemplates = allTemplates.filter((t) => t.recurrence === "none");
+    const recurringTemplates = allTemplates.filter((t) => t.recurrence !== "none");
 
-    // Lazily backfill today's instances for any active template that's due
-    // today and doesn't have one yet (stand-in for the not-yet-built cron
-    // job). A weekly/weekdays-only chore that isn't due today simply won't
-    // get an instance, so it won't show up until its next scheduled day.
-    const todayDate = new Date();
+    const [{ data: todayInstancesData }, { data: onceInstancesData }] = await Promise.all([
+      supabase.from("chore_instances").select("*").eq("occurrence_date", today),
+      onceTemplates.length > 0
+        ? supabase
+            .from("chore_instances")
+            .select("*")
+            .in("template_id", onceTemplates.map((t) => t.id))
+        : Promise.resolve({ data: [] as ChoreInstance[] }),
+    ]);
+
+    let allInstances = (todayInstancesData ?? []) as ChoreInstance[];
+    const onceInstances = (onceInstancesData ?? []) as ChoreInstance[];
+
+    // Merge in every not-yet-completed one-time instance regardless of its
+    // occurrence_date (today's fetch above already covers same-day ones,
+    // so skip re-adding those to avoid duplicates).
+    const alreadyIncluded = new Set(allInstances.map((i) => i.id));
+    for (const instance of onceInstances) {
+      if (!instance.completed && !alreadyIncluded.has(instance.id)) {
+        allInstances.push(instance);
+        alreadyIncluded.add(instance.id);
+      }
+    }
+
+    // Lazily backfill instances for any active template that doesn't have
+    // one yet (stand-in for the not-yet-built cron job): recurring chores
+    // only when due today, one-time chores unconditionally (they only ever
+    // get this single instance, whenever it's first loaded).
     const existingTemplateIds = new Set(allInstances.map((i) => i.template_id));
-    const missing = allTemplates.filter(
+    const missingRecurring = recurringTemplates.filter(
       (t) => !existingTemplateIds.has(t.id) && isDueOn(t, todayDate)
     );
+    const missingOnce = onceTemplates.filter((t) => !existingTemplateIds.has(t.id));
+    const missing = [...missingRecurring, ...missingOnce];
     if (missing.length > 0) {
       const { data: inserted } = await supabase
         .from("chore_instances")
@@ -111,13 +138,11 @@ export default function TasksPage() {
   }, [loadAll]);
 
   // Live sync: someone else claiming/completing a chore, or a new chore
-  // template being added, shows up here without a manual refresh. Scoped to
-  // today's occurrence_date since that's the only slice this page cares about.
-  useRealtimeTable(
-    "chore_instances",
-    () => loadAll(),
-    `occurrence_date=eq.${todayISO()}`
-  );
+  // template being added, shows up here without a manual refresh.
+  // Unfiltered (not scoped to today's occurrence_date) because one-time
+  // chores can have an instance dated on any past day and still need to
+  // live-update here.
+  useRealtimeTable("chore_instances", () => loadAll());
   useRealtimeTable("chore_templates", () => loadAll());
 
   const instanceByTemplateId = useMemo(() => {
