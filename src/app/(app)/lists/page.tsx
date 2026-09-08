@@ -92,6 +92,20 @@ export default function ListsPage() {
     }
   }
 
+  async function handleDeleteList(e: React.MouseEvent, list: List) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Delete "${list.name}"? This will remove all items on it.`)) return;
+
+    const supabase = createClient();
+    const { error: deleteError } = await supabase.from("lists").delete().eq("id", list.id);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+    setLists((prev) => prev.filter((l) => l.id !== list.id));
+  }
+
   return (
     <div className="p-4 md:p-8">
       <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Lists</h1>
@@ -139,9 +153,19 @@ export default function ListsPage() {
                 href={`/lists/${list.id}`}
                 className="rounded-xl border border-accent-100 p-4 hover:bg-neutral-50"
               >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between gap-2">
                   <span className="font-medium text-[var(--foreground)]">{list.name}</span>
-                  <span className="text-xs text-accent-900/55">{items.length} left</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs text-accent-900/55">{items.length} left</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteList(e, list)}
+                      className="text-xs text-neutral-400 hover:text-red-600"
+                      aria-label={`Delete ${list.name}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 {items.length === 0 ? (
                   <p className="text-xs text-neutral-400">Nothing on this list.</p>
