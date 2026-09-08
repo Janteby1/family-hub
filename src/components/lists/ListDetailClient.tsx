@@ -17,6 +17,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
 
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
+  const [allLists, setAllLists] = useState<List[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,11 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
     const supabase = createClient();
     await cleanupExpiredCheckedItems(supabase);
 
-    const [{ data: listData, error: listError }, { data: itemsData, error: itemsError }] = await Promise.all([
+    const [
+      { data: listData, error: listError },
+      { data: itemsData, error: itemsError },
+      { data: allListsData },
+    ] = await Promise.all([
       supabase.from("lists").select("*").eq("id", listId).single(),
       supabase
         .from("list_items")
@@ -37,6 +42,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
         .eq("list_id", listId)
         .order("checked", { ascending: true })
         .order("created_at", { ascending: true }),
+      supabase.from("lists").select("*").order("created_at"),
     ]);
 
     if (listError) {
@@ -51,6 +57,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
       setItems((itemsData ?? []) as ListItem[]);
     }
 
+    setAllLists((allListsData ?? []) as List[]);
     setLoading(false);
   }
 
@@ -124,15 +131,48 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
   const uncheckedItems = items.filter((i) => !i.checked);
   const checkedItems = items.filter((i) => i.checked);
 
+  const currentIndex = allLists.findIndex((l) => l.id === listId);
+  const prevList = currentIndex > 0 ? allLists[currentIndex - 1] : null;
+  const nextList =
+    currentIndex >= 0 && currentIndex < allLists.length - 1 ? allLists[currentIndex + 1] : null;
+
   return (
     <div className="p-4 md:p-8">
       <Link href="/lists" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
         ← Back to lists
       </Link>
 
-      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">
-        {loading ? "Loading..." : list?.name ?? "List not found"}
-      </h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-[var(--foreground)]">
+          {loading ? "Loading..." : list?.name ?? "List not found"}
+        </h1>
+        {allLists.length > 1 && (
+          <div className="flex shrink-0 items-center gap-3 text-sm">
+            {prevList ? (
+              <Link
+                href={`/lists/${prevList.id}`}
+                className="text-accent-900/55 hover:underline"
+                title={prevList.name}
+              >
+                ← Prev
+              </Link>
+            ) : (
+              <span className="text-neutral-300">← Prev</span>
+            )}
+            {nextList ? (
+              <Link
+                href={`/lists/${nextList.id}`}
+                className="text-accent-900/55 hover:underline"
+                title={nextList.name}
+              >
+                Next →
+              </Link>
+            ) : (
+              <span className="text-neutral-300">Next →</span>
+            )}
+          </div>
+        )}
+      </div>
 
       <section className="mb-6 rounded-xl border border-accent-100 p-4">
         <h2 className="mb-3 font-medium text-[var(--foreground)]">Add item</h2>
