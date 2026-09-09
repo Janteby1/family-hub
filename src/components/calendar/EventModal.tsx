@@ -54,7 +54,7 @@ export function EventModal({
   const [startTime, setStartTime] = useState("20:00");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [assignedMemberId, setAssignedMemberId] = useState("");
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export function EventModal({
         setEndDate("");
         setEndTime("");
       }
-      setAssignedMemberId(event.assigned_member_id ?? "");
+      setAssignedMemberIds(event.assigned_member_ids ?? []);
     } else {
       setTitle("");
       setDescription("");
@@ -84,10 +84,16 @@ export function EventModal({
       setStartTime("20:00");
       setEndDate("");
       setEndTime("");
-      setAssignedMemberId("");
+      setAssignedMemberIds([]);
     }
     setError(null);
   }, [event, defaultDate]);
+
+  function toggleAssignedMember(memberId: string) {
+    setAssignedMemberIds((prev) =>
+      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
+    );
+  }
 
   async function handleSave() {
     if (!title.trim()) {
@@ -118,7 +124,7 @@ export function EventModal({
       starts_at: startsAt.toISOString(),
       ends_at: endsAt ? endsAt.toISOString() : null,
       all_day: allDay,
-      assigned_member_id: assignedMemberId || null,
+      assigned_member_ids: assignedMemberIds,
     };
 
     const supabase = createClient();
@@ -269,18 +275,33 @@ export function EventModal({
 
           <div>
             <label className="mb-1 block text-xs font-medium text-neutral-700">Assigned to</label>
-            <select
-              value={assignedMemberId}
-              onChange={(e) => setAssignedMemberId(e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-            >
-              <option value="">Unassigned</option>
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.display_name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              {members.map((member) => {
+                const selected = assignedMemberIds.includes(member.id);
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => toggleAssignedMember(member.id)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? "border-transparent text-white"
+                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                    }`}
+                    style={selected ? { backgroundColor: member.color } : undefined}
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: selected ? "rgba(255,255,255,0.8)" : member.color }}
+                    />
+                    {member.display_name}
+                  </button>
+                );
+              })}
+            </div>
+            {assignedMemberIds.length === 0 && (
+              <p className="mt-1 text-xs text-neutral-400">Unassigned</p>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

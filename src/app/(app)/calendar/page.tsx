@@ -304,9 +304,9 @@ export default function CalendarPage() {
                 ) : (
                   <ul className="space-y-1.5">
                     {dayEvents.map((event) => {
-                      const assignedMember = event.assigned_member_id
-                        ? memberById.get(event.assigned_member_id)
-                        : null;
+                      const assignedMembers = event.assigned_member_ids
+                        .map((id) => memberById.get(id))
+                        .filter((m): m is FamilyMember => Boolean(m));
                       return (
                         <li key={event.id}>
                           <button
@@ -315,10 +315,22 @@ export default function CalendarPage() {
                             className="w-full rounded-md border border-accent-100 px-2 py-1.5 text-left hover:bg-accent-50"
                           >
                             <div className="flex items-center gap-1.5">
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ backgroundColor: assignedMember?.color ?? "#a3a3a3" }}
-                              />
+                              {assignedMembers.length > 0 ? (
+                                <span className="flex shrink-0 -space-x-0.5">
+                                  {assignedMembers.map((m) => (
+                                    <span
+                                      key={m.id}
+                                      className="h-2 w-2 rounded-full ring-1 ring-white"
+                                      style={{ backgroundColor: m.color }}
+                                    />
+                                  ))}
+                                </span>
+                              ) : (
+                                <span
+                                  className="h-2 w-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: "#a3a3a3" }}
+                                />
+                              )}
                               <span className="truncate text-sm font-medium text-[var(--foreground)]">
                                 {event.title}
                               </span>
@@ -377,9 +389,9 @@ export default function CalendarPage() {
                   </span>
                   <ul className="space-y-0.5">
                     {dayEvents.slice(0, 3).map((event) => {
-                      const assignedMember = event.assigned_member_id
-                        ? memberById.get(event.assigned_member_id)
-                        : null;
+                      const assignedMembers = event.assigned_member_ids
+                        .map((id) => memberById.get(id))
+                        .filter((m): m is FamilyMember => Boolean(m));
                       return (
                         <li
                           key={event.id}
@@ -389,10 +401,22 @@ export default function CalendarPage() {
                           }}
                           className="flex items-center gap-1 truncate rounded px-1 text-[11px] hover:bg-accent-100"
                         >
-                          <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: assignedMember?.color ?? "#a3a3a3" }}
-                          />
+                          {assignedMembers.length > 0 ? (
+                            <span className="flex shrink-0 -space-x-0.5">
+                              {assignedMembers.map((m) => (
+                                <span
+                                  key={m.id}
+                                  className="h-1.5 w-1.5 rounded-full ring-1 ring-white"
+                                  style={{ backgroundColor: m.color }}
+                                />
+                              ))}
+                            </span>
+                          ) : (
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: "#a3a3a3" }}
+                            />
+                          )}
                           <span className="truncate text-[var(--foreground)]">{event.title}</span>
                         </li>
                       );
