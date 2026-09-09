@@ -60,7 +60,7 @@ export default function PhotoImportPage() {
   const [allDay, setAllDay] = useState(false);
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("09:00");
-  const [assignedMemberId, setAssignedMemberId] = useState("");
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([]);
   const [extracted, setExtracted] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -142,7 +142,7 @@ export default function PhotoImportPage() {
       location: location.trim() || null,
       starts_at: startsAt.toISOString(),
       all_day: allDay,
-      assigned_member_id: assignedMemberId || null,
+      assigned_member_ids: assignedMemberIds,
       created_by: member?.id ?? null,
       source: "photo_import",
     });
@@ -262,18 +262,37 @@ export default function PhotoImportPage() {
 
         <section className="rounded-xl border border-accent-100 p-4">
           <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Assigned to</label>
-          <select
-            value={assignedMemberId}
-            onChange={(e) => setAssignedMemberId(e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-          >
-            <option value="">Unassigned</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.display_name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            {members.map((m) => {
+              const selected = assignedMemberIds.includes(m.id);
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() =>
+                    setAssignedMemberIds((prev) =>
+                      prev.includes(m.id) ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                    )
+                  }
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    selected
+                      ? "border-transparent text-white"
+                      : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                  }`}
+                  style={selected ? { backgroundColor: m.color } : undefined}
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: selected ? "rgba(255,255,255,0.8)" : m.color }}
+                  />
+                  {m.display_name}
+                </button>
+              );
+            })}
+          </div>
+          {assignedMemberIds.length === 0 && (
+            <p className="mt-1 text-xs text-neutral-400">Unassigned</p>
+          )}
         </section>
 
         <section className="rounded-xl border border-accent-100 p-4">

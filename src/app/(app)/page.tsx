@@ -236,15 +236,27 @@ export default function DashboardPage() {
                     </p>
                     <ul className="space-y-1.5">
                       {dayEvents.map((event) => {
-                        const member = event.assigned_member_id
-                          ? memberById.get(event.assigned_member_id)
-                          : null;
+                        const eventMembers = event.assigned_member_ids
+                          .map((id) => memberById.get(id))
+                          .filter((m): m is FamilyMember => Boolean(m));
                         return (
                           <li key={event.id} className="flex items-center gap-2 text-sm">
-                            <span
-                              className="h-2 w-2 shrink-0 rounded-full"
-                              style={{ backgroundColor: member?.color ?? "#a3a3a3" }}
-                            />
+                            {eventMembers.length > 0 ? (
+                              <span className="flex shrink-0 -space-x-0.5">
+                                {eventMembers.map((m) => (
+                                  <span
+                                    key={m.id}
+                                    className="h-2 w-2 rounded-full ring-1 ring-white"
+                                    style={{ backgroundColor: m.color }}
+                                  />
+                                ))}
+                              </span>
+                            ) : (
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ backgroundColor: "#a3a3a3" }}
+                              />
+                            )}
                             <span className="font-medium text-[var(--foreground)]">{event.title}</span>
                             <span className="text-accent-900/55">
                               {event.all_day

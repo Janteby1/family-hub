@@ -19,7 +19,7 @@ export interface CalendarEvent {
   starts_at: string;
   ends_at: string | null;
   all_day: boolean;
-  assigned_member_id: string | null;
+  assigned_member_ids: string[];
   created_by: string | null;
   source: "manual" | "photo_import";
   created_at: string;
