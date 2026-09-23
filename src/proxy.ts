@@ -23,18 +23,23 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getSession() reads the session from the cookie and only hits the network
+  // to refresh an expired token — unlike getUser(), which always makes a
+  // request to Supabase's Auth server. That authoritative check isn't needed
+  // here: this redirect is just a UI gate, and every actual data request
+  // still gets verified server-side by Postgres RLS using the real JWT.
+  const { data: { session } } = await supabase.auth.getSession();
 
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
   const isApiRoute = request.nextUrl.pathname.startsWith("/api");
   const isManifest = request.nextUrl.pathname === "/manifest.webmanifest";
 
-  if (!user && !isLoginPage && !isApiRoute && !isManifest) {
+  if (!session && !isLoginPage && !isApiRoute && !isManifest) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isLoginPage) {
+  if (session && isLoginPage) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

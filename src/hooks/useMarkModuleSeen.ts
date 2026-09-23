@@ -11,7 +11,8 @@ export function useMarkModuleSeen(module: BadgeModule) {
     const supabase = createClient();
 
     async function markSeen() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return;
       await supabase
         .from("module_last_seen")

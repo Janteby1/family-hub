@@ -16,7 +16,8 @@ export function useCurrentMember() {
     let mounted = true;
 
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         if (mounted) setLoading(false);
         return;

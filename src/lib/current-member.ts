@@ -7,7 +7,8 @@ export async function getCurrentMember(): Promise<{
   member: FamilyMember | null;
 } | null> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
   if (!user) return null;
 
   const { data: member } = await supabase
