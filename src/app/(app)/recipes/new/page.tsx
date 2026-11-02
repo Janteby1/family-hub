@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
+import { KOSHER_TYPES, RECIPE_CATEGORIES } from "@/lib/recipe-meta";
+import type { KosherType } from "@/lib/types";
 
 export default function NewRecipePage() {
   const router = useRouter();
@@ -11,6 +13,8 @@ export default function NewRecipePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [servings, setServings] = useState("");
+  const [category, setCategory] = useState("");
+  const [kosherType, setKosherType] = useState<KosherType | "">("");
   const [ingredientsText, setIngredientsText] = useState("");
   const [stepsText, setStepsText] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,8 @@ export default function NewRecipePage() {
         title: title.trim(),
         description: description.trim() || null,
         servings: servings.trim() || null,
+        category: category || null,
+        kosher_type: kosherType || null,
         steps,
         created_by: member?.id ?? null,
       })
@@ -112,6 +118,39 @@ export default function NewRecipePage() {
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
             placeholder="e.g. 4"
           />
+        </section>
+
+        <section className="grid grid-cols-2 gap-3 rounded-xl border border-accent-100 p-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Dish type</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            >
+              <option value="">Not set</option>
+              {RECIPE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[var(--foreground)]">Meat / dairy / parve</label>
+            <select
+              value={kosherType}
+              onChange={(e) => setKosherType(e.target.value as KosherType | "")}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+            >
+              <option value="">Not set</option>
+              {KOSHER_TYPES.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </section>
 
         <section className="rounded-xl border border-accent-100 p-4">

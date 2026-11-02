@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useMarkModuleSeen } from "@/hooks/useMarkModuleSeen";
-import type { Recipe } from "@/lib/types";
+import { RecipeBrowser, type RecipeListItem } from "@/components/recipes/RecipeBrowser";
 
 export default function RecipesPage() {
   useMarkModuleSeen("recipes");
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
+  const [ingredientText, setIngredientText] = useState<Record<string, string> | undefined>();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,12 +18,31 @@ export default function RecipesPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("recipes")
-        .select("*")
-        .order("title");
-      if (mounted) {
-        setRecipes((data ?? []) as Recipe[]);
-        setLoading(false);
+        .select("id,title,description,servings,category,kosher_type")
+        .order("title")
+        .limit(5000);
+      if (!mounted) return;
+      setRecipes((data ?? []) as RecipeListItem[]);
+      setLoading(false);
+
+      // Loaded after the list renders so the page isn't blocked on it; the
+      // API caps each response at 1000 rows, so page through.
+      const byRecipe: Record<string, string> = {};
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data: rows, error } = await supabase
+          .from("recipe_ingredients")
+          .select("recipe_id,raw_text")
+          .order("recipe_id")
+          .order("id")
+          .range(from, from + pageSize - 1);
+        if (error || !rows) break;
+        for (const row of rows as { recipe_id: string; raw_text: string }[]) {
+          byRecipe[row.recipe_id] = `${byRecipe[row.recipe_id] ?? ""} ${row.raw_text}`;
+        }
+        if (rows.length < pageSize) break;
       }
+      if (mounted) setIngredientText(byRecipe);
     }
     load();
     return () => {
@@ -32,7 +52,7 @@ export default function RecipesPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-[var(--foreground)]">Recipes</h1>
         <div className="flex items-center gap-3">
           <Link
@@ -55,21 +75,7 @@ export default function RecipesPage() {
       ) : recipes.length === 0 ? (
         <p className="text-sm text-accent-900/55">No recipes yet.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {recipes.map((recipe) => (
-            <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
-              <section className="rounded-xl border border-accent-100 p-4 hover:bg-neutral-50">
-                <h2 className="font-medium text-[var(--foreground)]">{recipe.title}</h2>
-                {recipe.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-accent-900/55">{recipe.description}</p>
-                )}
-                {recipe.servings && (
-                  <p className="mt-1 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
-                )}
-              </section>
-            </Link>
-          ))}
-        </div>
+        <RecipeBrowser recipes={recipes} ingredientText={ingredientText} />
       )}
     </div>
   );

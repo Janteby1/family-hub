@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/hooks/useCurrentMember";
-import type { Recipe, RecipeIngredient } from "@/lib/types";
+import { KOSHER_TYPES, RECIPE_CATEGORIES } from "@/lib/recipe-meta";
+import type { KosherType, Recipe, RecipeIngredient } from "@/lib/types";
 
 export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
   const { member } = useCurrentMember();
@@ -38,6 +39,18 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
       mounted = false;
     };
   }, [recipeId]);
+
+  async function handleClassify(patch: { category?: string | null; kosher_type?: KosherType | null }) {
+    if (!recipe) return;
+    const previous = recipe;
+    setRecipe({ ...recipe, ...patch });
+    const supabase = createClient();
+    const { error } = await supabase.from("recipes").update(patch).eq("id", recipe.id);
+    if (error) {
+      setRecipe(previous);
+      setAddResultMessage(error.message);
+    }
+  }
 
   async function handleAddToGroceryList() {
     setAddingToList(true);
@@ -137,7 +150,53 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
         <p className="mb-2 text-sm text-[var(--foreground)]">{recipe.description}</p>
       )}
       {recipe.servings && (
-        <p className="mb-6 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
+        <p className="mb-2 text-sm text-accent-900/55">Servings: {recipe.servings}</p>
+      )}
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <select
+          value={recipe.category ?? ""}
+          onChange={(e) => handleClassify({ category: e.target.value || null })}
+          aria-label="Dish type"
+          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+        >
+          <option value="">No dish type</option>
+          {RECIPE_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+          {recipe.category && !(RECIPE_CATEGORIES as readonly string[]).includes(recipe.category) && (
+            <option value={recipe.category}>{recipe.category}</option>
+          )}
+        </select>
+        <select
+          value={recipe.kosher_type ?? ""}
+          onChange={(e) => handleClassify({ kosher_type: (e.target.value || null) as KosherType | null })}
+          aria-label="Meat, dairy or parve"
+          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+        >
+          <option value="">Not set</option>
+          {KOSHER_TYPES.map((k) => (
+            <option key={k.value} value={k.value}>
+              {k.label}
+            </option>
+          ))}
+        </select>
+        {recipe.source_url && (
+          <a
+            href={recipe.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent-900/55 hover:underline"
+          >
+            Original post
+          </a>
+        )}
+      </div>
+
+      {recipe.notes && (
+        <p className="mb-6 rounded-md bg-accent-50 px-3 py-2 text-sm text-accent-900/70">{recipe.notes}</p>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
