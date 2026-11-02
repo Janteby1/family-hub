@@ -75,10 +75,15 @@ export interface ListItem {
   created_at: string;
 }
 
+export type KosherType = "meat" | "dairy" | "parve";
+
 export interface Recipe {
   id: string;
   title: string;
   description: string | null;
+  category: string | null;
+  kosher_type: KosherType | null;
+  notes: string | null;
   source_url: string | null;
   image_url: string | null;
   steps: string[];
