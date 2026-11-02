@@ -234,31 +234,100 @@ export default function MealsPage() {
 
   const today = new Date();
 
+  function renderEditor(large: boolean) {
+    const input = `mb-2 w-full rounded-md border border-neutral-300 outline-none focus:border-neutral-500 ${
+      large ? "px-3 py-2.5 text-sm" : "px-2 py-1 text-xs"
+    }`;
+    const label = "mb-1 block text-xs font-medium text-accent-900/55";
+    const button = large ? "px-4 py-2.5 text-sm" : "px-2 py-1 text-xs";
+    return (
+      <>
+        <label className={label}>Recipe</label>
+        <select
+          value={editRecipeId}
+          onChange={(e) => {
+            setEditRecipeId(e.target.value);
+            if (e.target.value) setEditFreeText("");
+          }}
+          className={input}
+        >
+          <option value="">None</option>
+          {recipes.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.title}
+            </option>
+          ))}
+        </select>
+        <label className={label}>Or free text</label>
+        <input
+          type="text"
+          value={editFreeText}
+          onChange={(e) => {
+            setEditFreeText(e.target.value);
+            if (e.target.value) setEditRecipeId("");
+          }}
+          placeholder="e.g. Leftovers"
+          className={input}
+        />
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={closeEditor}
+            className={`rounded-md border border-neutral-300 font-medium text-neutral-700 hover:bg-neutral-50 ${button}`}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={saveCell}
+            className={`rounded-md bg-accent-600 font-medium text-white hover:bg-accent-700 disabled:opacity-50 ${button}`}
+          >
+            Save
+          </button>
+        </div>
+
+        <div className="mt-3 border-t border-neutral-100 pt-2">
+          <label className={label}>Add ingredients to grocery list</label>
+          <textarea
+            value={ingredientsText}
+            onChange={(e) => setIngredientsText(e.target.value)}
+            rows={3}
+            placeholder={"One per line, e.g.\nGround beef\nTaco shells"}
+            className={input}
+          />
+          <button
+            type="button"
+            onClick={addIngredientsToGroceryList}
+            disabled={addingIngredients || !ingredientsText.trim()}
+            className={`w-full rounded-md border border-accent-200 font-medium text-accent-900/80 hover:bg-accent-50 disabled:opacity-50 ${button}`}
+          >
+            {addingIngredients ? "Adding..." : "+ Add to grocery list"}
+          </button>
+          {ingredientsMessage && (
+            <p className="mt-1 text-xs text-accent-900/55">{ingredientsMessage}</p>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  const navButton =
+    "rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 md:py-2";
+
   return (
     <div className="p-4 md:p-8">
-      <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Meal Planner</h1>
+      <h1 className="mb-4 text-2xl font-semibold text-[var(--foreground)] md:mb-6">Meal Planner</h1>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setWeekStart((prev) => addDays(prev, -7))}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-          >
+          <button type="button" onClick={() => setWeekStart((prev) => addDays(prev, -7))} className={navButton}>
             Prev
           </button>
-          <button
-            type="button"
-            onClick={() => setWeekStart(startOfWeek(new Date()))}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-          >
+          <button type="button" onClick={() => setWeekStart(startOfWeek(new Date()))} className={navButton}>
             Today
           </button>
-          <button
-            type="button"
-            onClick={() => setWeekStart((prev) => addDays(prev, 7))}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-          >
+          <button type="button" onClick={() => setWeekStart((prev) => addDays(prev, 7))} className={navButton}>
             Next
           </button>
         </div>
@@ -268,135 +337,128 @@ export default function MealsPage() {
       {loading ? (
         <p className="text-sm text-accent-900/55">Loading...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse">
-            <thead>
-              <tr>
-                <th className="w-24 p-2 text-left text-xs font-medium text-accent-900/55"> </th>
-                {weekDays.map((day) => {
-                  const isToday = dateKey(day) === dateKey(today);
-                  return (
-                    <th key={dateKey(day)} className="p-2 text-left text-xs font-medium">
-                      <span className={isToday ? "text-[var(--foreground)]" : "text-accent-900/55"}>
-                        {DAY_LABELS[day.getDay()]} {day.getDate()}
-                      </span>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {MEAL_SLOTS.map((slot) => (
-                <tr key={slot}>
-                  <td className="p-2 align-top text-xs font-medium text-accent-900/55">
-                    {SLOT_LABELS[slot]}
-                  </td>
-                  {weekDays.map((day) => {
-                    const planDate = dateKey(day);
-                    const entry = entryByCell.get(cellKey(planDate, slot));
-                    const recipeTitle = entry?.recipe_id
-                      ? recipeById.get(entry.recipe_id)?.title
-                      : null;
-                    const displayText = recipeTitle ?? entry?.free_text ?? "";
-                    const isEditing =
-                      editingCell?.planDate === planDate && editingCell?.slot === slot;
-
-                    return (
-                      <td key={planDate} className="p-1 align-top">
-                        {isEditing ? (
-                          <div className="w-56 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
-                            <label className="mb-1 block text-xs font-medium text-accent-900/55">
-                              Recipe
-                            </label>
-                            <select
-                              value={editRecipeId}
-                              onChange={(e) => {
-                                setEditRecipeId(e.target.value);
-                                if (e.target.value) setEditFreeText("");
-                              }}
-                              className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
-                            >
-                              <option value="">None</option>
-                              {recipes.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.title}
-                                </option>
-                              ))}
-                            </select>
-                            <label className="mb-1 block text-xs font-medium text-accent-900/55">
-                              Or free text
-                            </label>
-                            <input
-                              type="text"
-                              value={editFreeText}
-                              onChange={(e) => {
-                                setEditFreeText(e.target.value);
-                                if (e.target.value) setEditRecipeId("");
-                              }}
-                              placeholder="e.g. Leftovers"
-                              className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
-                            />
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={closeEditor}
-                                className="rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                disabled={saving}
-                                onClick={saveCell}
-                                className="rounded-md bg-accent-600 hover:bg-accent-700 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
-                              >
-                                Save
-                              </button>
-                            </div>
-
-                            <div className="mt-3 border-t border-neutral-100 pt-2">
-                              <label className="mb-1 block text-xs font-medium text-accent-900/55">
-                                Add ingredients to grocery list
-                              </label>
-                              <textarea
-                                value={ingredientsText}
-                                onChange={(e) => setIngredientsText(e.target.value)}
-                                rows={3}
-                                placeholder={"One per line, e.g.\nGround beef\nTaco shells"}
-                                className="mb-2 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs outline-none focus:border-neutral-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={addIngredientsToGroceryList}
-                                disabled={addingIngredients || !ingredientsText.trim()}
-                                className="w-full rounded-md border border-accent-200 px-2 py-1 text-xs font-medium text-accent-900/80 hover:bg-accent-50 disabled:opacity-50"
-                              >
-                                {addingIngredients ? "Adding..." : "+ Add to grocery list"}
-                              </button>
-                              {ingredientsMessage && (
-                                <p className="mt-1 text-xs text-accent-900/55">{ingredientsMessage}</p>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => openCellEditor(planDate, slot)}
-                            className={`h-16 w-full rounded-md border border-accent-100 p-2 text-left text-xs hover:bg-neutral-50 ${
-                              displayText ? "text-[var(--foreground)]" : "text-neutral-400"
-                            }`}
+        <>
+          {/* Phones: one card per day, tap a meal to edit it in a bottom sheet. */}
+          <div className="space-y-3 md:hidden">
+            {weekDays.map((day) => {
+              const planDate = dateKey(day);
+              const isToday = planDate === dateKey(today);
+              return (
+                <section
+                  key={planDate}
+                  className={`rounded-xl border p-3 ${isToday ? "border-accent-400 bg-accent-50/60" : "border-accent-100"}`}
+                >
+                  <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">
+                    {DAY_LABELS[day.getDay()]} {day.getDate()}
+                    {isToday && <span className="ml-2 text-xs font-medium text-accent-600">Today</span>}
+                  </h2>
+                  <div className="space-y-1.5">
+                    {MEAL_SLOTS.map((slot) => {
+                      const entry = entryByCell.get(cellKey(planDate, slot));
+                      const recipeTitle = entry?.recipe_id ? recipeById.get(entry.recipe_id)?.title : null;
+                      const displayText = recipeTitle ?? entry?.free_text ?? "";
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => openCellEditor(planDate, slot)}
+                          className="flex min-h-12 w-full items-center gap-3 rounded-lg border border-accent-100 bg-white px-3 py-2 text-left active:bg-accent-50"
+                        >
+                          <span className="w-20 shrink-0 text-xs font-medium text-accent-900/55">
+                            {SLOT_LABELS[slot]}
+                          </span>
+                          <span
+                            className={`min-w-0 flex-1 text-sm ${displayText ? "text-[var(--foreground)]" : "text-neutral-400"}`}
                           >
                             {displayText || "+ Add"}
-                          </button>
-                        )}
-                      </td>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+
+          {editingCell && (
+            <div
+              className="fixed inset-0 z-50 flex items-end bg-black/40 md:hidden"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) closeEditor();
+              }}
+            >
+              <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg">
+                <h2 className="mb-3 text-base font-semibold text-[var(--foreground)]">
+                  {SLOT_LABELS[editingCell.slot]} ·{" "}
+                  {new Date(`${editingCell.planDate}T00:00:00`).toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </h2>
+                {renderEditor(true)}
+              </div>
+            </div>
+          )}
+
+          {/* Tablets and up: the full week grid. */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[720px] border-collapse">
+              <thead>
+                <tr>
+                  <th className="w-24 p-2 text-left text-xs font-medium text-accent-900/55"> </th>
+                  {weekDays.map((day) => {
+                    const isToday = dateKey(day) === dateKey(today);
+                    return (
+                      <th key={dateKey(day)} className="p-2 text-left text-xs font-medium">
+                        <span className={isToday ? "text-[var(--foreground)]" : "text-accent-900/55"}>
+                          {DAY_LABELS[day.getDay()]} {day.getDate()}
+                        </span>
+                      </th>
                     );
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {MEAL_SLOTS.map((slot) => (
+                  <tr key={slot}>
+                    <td className="p-2 align-top text-xs font-medium text-accent-900/55">
+                      {SLOT_LABELS[slot]}
+                    </td>
+                    {weekDays.map((day) => {
+                      const planDate = dateKey(day);
+                      const entry = entryByCell.get(cellKey(planDate, slot));
+                      const recipeTitle = entry?.recipe_id ? recipeById.get(entry.recipe_id)?.title : null;
+                      const displayText = recipeTitle ?? entry?.free_text ?? "";
+                      const isEditing = editingCell?.planDate === planDate && editingCell?.slot === slot;
+
+                      return (
+                        <td key={planDate} className="p-1 align-top">
+                          {isEditing ? (
+                            <div className="w-56 rounded-md border border-neutral-300 bg-white p-2 shadow-sm">
+                              {renderEditor(false)}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openCellEditor(planDate, slot)}
+                              className={`h-16 w-full rounded-md border border-accent-100 p-2 text-left text-xs hover:bg-neutral-50 ${
+                                displayText ? "text-[var(--foreground)]" : "text-neutral-400"
+                              }`}
+                            >
+                              {displayText || "+ Add"}
+                            </button>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

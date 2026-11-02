@@ -18,9 +18,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const badgeCounts = await getBadgeCounts();
 
   return (
-    <div className="flex min-h-screen flex-row">
+    <div className="flex min-h-dvh flex-col md:flex-row">
       <Nav badgeCounts={badgeCounts} />
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="min-w-0 flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        {children}
+      </main>
     </div>
   );
 }

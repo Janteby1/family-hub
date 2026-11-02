@@ -17,10 +17,14 @@ interface RecipeBrowserProps {
   ingredientText?: Record<string, string>;
 }
 
-const STORAGE_KEY = "recipes-filters-v1";
+const STORAGE_KEY = "recipes-filters-v2";
+
+function toggle<T>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
 
 function chipClass(active: boolean) {
-  return `shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
+  return `shrink-0 rounded-full border px-3.5 py-2 text-sm transition-colors md:px-3 md:py-1 ${
     active
       ? "border-accent-600 bg-accent-600 text-white"
       : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
@@ -29,16 +33,16 @@ function chipClass(active: boolean) {
 
 export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
-  const [kosher, setKosher] = useState<KosherType | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedKosher, setSelectedKosher] = useState<KosherType[]>([]);
 
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
       if (saved) {
         setQuery(saved.query ?? "");
-        setCategory(saved.category ?? null);
-        setKosher(saved.kosher ?? null);
+        setSelectedCategories(Array.isArray(saved.categories) ? saved.categories : []);
+        setSelectedKosher(Array.isArray(saved.kosher) ? saved.kosher : []);
       }
     } catch {
       // no stored filters, or storage unavailable
@@ -47,11 +51,11 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ query, category, kosher }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ query, categories: selectedCategories, kosher: selectedKosher }));
     } catch {
       // storage unavailable
     }
-  }, [query, category, kosher]);
+  }, [query, selectedCategories, selectedKosher]);
 
   const tokens = useMemo(
     () => query.toLowerCase().split(/\s+/).filter(Boolean),
@@ -75,41 +79,40 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
     return tokens.every((t) => hay.includes(t));
   };
 
-  // Counts on each chip reflect the other active filters, so a chip never
-  // promises results the grid can't show.
+  const inCategories = (r: RecipeListItem) =>
+    selectedCategories.length === 0 || selectedCategories.includes(r.category ?? "Other");
+  const inKosher = (r: RecipeListItem) =>
+    selectedKosher.length === 0 || (r.kosher_type !== null && selectedKosher.includes(r.kosher_type));
+
+  // Within a group, picks widen the results (meat OR dairy); across groups
+  // and search they narrow them. Each chip's count applies every *other*
+  // active filter, so it shows what selecting it would add.
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of recipes) {
-      if (kosher && r.kosher_type !== kosher) continue;
-      if (!matchesQuery(r)) continue;
+      if (!inKosher(r) || !matchesQuery(r)) continue;
       const key = r.category ?? "Other";
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipes, kosher, tokens, searchable]);
+  }, [recipes, selectedKosher, tokens, searchable]);
 
   const kosherCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of recipes) {
-      if (category && (r.category ?? "Other") !== category) continue;
-      if (!matchesQuery(r)) continue;
+      if (!inCategories(r) || !matchesQuery(r)) continue;
       const key = r.kosher_type ?? "none";
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipes, category, tokens, searchable]);
+  }, [recipes, selectedCategories, tokens, searchable]);
 
   const filtered = useMemo(
-    () =>
-      recipes.filter((r) => {
-        if (category && (r.category ?? "Other") !== category) return false;
-        if (kosher && r.kosher_type !== kosher) return false;
-        return matchesQuery(r);
-      }),
+    () => recipes.filter((r) => inCategories(r) && inKosher(r) && matchesQuery(r)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [recipes, category, kosher, tokens, searchable]
+    [recipes, selectedCategories, selectedKosher, tokens, searchable]
   );
 
   const categories = useMemo(() => {
@@ -122,7 +125,7 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
     );
   }, [recipes]);
 
-  const hasFilters = query !== "" || category !== null || kosher !== null;
+  const hasFilters = query !== "" || selectedCategories.length > 0 || selectedKosher.length > 0;
 
   return (
     <div>
@@ -137,22 +140,31 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
         />
 
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:px-0" role="group" aria-label="Filter by meat, dairy or parve">
-          <button type="button" onClick={() => setKosher(null)} className={chipClass(kosher === null)}>
+          <button
+            type="button"
+            onClick={() => setSelectedKosher([])}
+            aria-pressed={selectedKosher.length === 0}
+            className={chipClass(selectedKosher.length === 0)}
+          >
             All
           </button>
-          {KOSHER_TYPES.map((k) => (
-            <button
-              key={k.value}
-              type="button"
-              onClick={() => setKosher(kosher === k.value ? null : k.value)}
-              className={chipClass(kosher === k.value)}
-            >
-              {k.label}{" "}
-              <span className={kosher === k.value ? "text-white/80" : "text-neutral-400"}>
-                {kosherCounts.get(k.value) ?? 0}
-              </span>
-            </button>
-          ))}
+          {KOSHER_TYPES.map((k) => {
+            const active = selectedKosher.includes(k.value);
+            return (
+              <button
+                key={k.value}
+                type="button"
+                onClick={() => setSelectedKosher(toggle(selectedKosher, k.value))}
+                aria-pressed={active}
+                className={chipClass(active)}
+              >
+                {k.label}{" "}
+                <span className={active ? "text-white/80" : "text-neutral-400"}>
+                  {kosherCounts.get(k.value) ?? 0}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div
@@ -160,22 +172,31 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
           role="group"
           aria-label="Filter by dish type"
         >
-          <button type="button" onClick={() => setCategory(null)} className={chipClass(category === null)}>
+          <button
+            type="button"
+            onClick={() => setSelectedCategories([])}
+            aria-pressed={selectedCategories.length === 0}
+            className={chipClass(selectedCategories.length === 0)}
+          >
             All dishes
           </button>
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCategory(category === c ? null : c)}
-              className={chipClass(category === c)}
-            >
-              {c}{" "}
-              <span className={category === c ? "text-white/80" : "text-neutral-400"}>
-                {categoryCounts.get(c) ?? 0}
-              </span>
-            </button>
-          ))}
+          {categories.map((c) => {
+            const active = selectedCategories.includes(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setSelectedCategories(toggle(selectedCategories, c))}
+                aria-pressed={active}
+                className={chipClass(active)}
+              >
+                {c}{" "}
+                <span className={active ? "text-white/80" : "text-neutral-400"}>
+                  {categoryCounts.get(c) ?? 0}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -189,8 +210,8 @@ export function RecipeBrowser({ recipes, ingredientText }: RecipeBrowserProps) {
             type="button"
             onClick={() => {
               setQuery("");
-              setCategory(null);
-              setKosher(null);
+              setSelectedCategories([]);
+              setSelectedKosher([]);
             }}
             className="hover:underline"
           >

@@ -57,13 +57,13 @@ export default function RecipesPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/recipes/import"
-            className="text-sm text-accent-900/55 hover:underline"
+            className="py-2.5 text-sm text-accent-900/55 hover:underline"
           >
             Import from link
           </Link>
           <Link
             href="/recipes/new"
-            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           >
             + Add recipe
           </Link>

@@ -70,3 +70,50 @@ h1,
 h2 {
   font-family: var(--font-serif), Georgia, serif;
 }
+
+/* ---- App-like touch behaviour ---- */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+a,
+button,
+summary,
+select,
+label {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button,
+nav a {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS Safari zooms the page when focusing any field under 16px. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Bigger hit areas for checkboxes on touch screens. */
+@media (pointer: coarse) {
+  input[type="checkbox"] {
+    width: 1.375rem;
+    height: 1.375rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Installed to the home screen: no rubber-band bounce. */
+@media (display-mode: standalone) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}

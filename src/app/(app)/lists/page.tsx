@@ -160,7 +160,7 @@ export default function ListsPage() {
                     <button
                       type="button"
                       onClick={(e) => handleDeleteList(e, list)}
-                      className="text-xs text-neutral-400 hover:text-red-600"
+                      className="-my-2 px-2 py-3 text-xs text-neutral-400 hover:text-red-600"
                       aria-label={`Delete ${list.name}`}
                     >
                       Delete
