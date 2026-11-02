@@ -158,7 +158,7 @@ export default function PhotoImportPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/calendar" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
+      <Link href="/calendar" className="mb-2 inline-block py-2.5 text-sm text-accent-900/55 hover:underline">
         ← Back to calendar
       </Link>
       <h1 className="mb-6 text-2xl font-semibold text-[var(--foreground)]">Add event via photo</h1>
@@ -188,7 +188,7 @@ export default function PhotoImportPage() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={extracting}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          className="rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
         >
           {extracting ? "Reading photo…" : previewUrl ? "Choose a different photo" : "Choose photo"}
         </button>
@@ -274,7 +274,7 @@ export default function PhotoImportPage() {
                       prev.includes(m.id) ? prev.filter((id) => id !== m.id) : [...prev, m.id]
                     )
                   }
-                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition-colors ${
                     selected
                       ? "border-transparent text-white"
                       : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
@@ -311,7 +311,7 @@ export default function PhotoImportPage() {
         <button
           type="submit"
           disabled={saving || !title.trim()}
-          className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save event"}
         </button>

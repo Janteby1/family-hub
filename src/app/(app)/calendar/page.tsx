@@ -63,6 +63,7 @@ export default function CalendarPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [modalDefaultDate, setModalDefaultDate] = useState<string>(dateKey(new Date()));
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
 
   // Month grid always shows 6 full weeks (42 days) starting from the Sunday
   // on or before the 1st, so partial leading/trailing days from adjacent
@@ -196,6 +197,8 @@ export default function CalendarPage() {
   // Week/2-Week views are a "what's coming up" glance, not a history log —
   // Month view (unfiltered below) is where past days stay visible.
   const visibleCardDays = cardDays.filter((day) => dateKey(day) >= todayKey);
+  const agendaKey = selectedDayKey ?? todayKey;
+  const agendaEvents = eventsByDay.get(agendaKey) ?? [];
   const rangeLabel =
     viewMode === "month"
       ? monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
@@ -208,14 +211,14 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/calendar/photo-import"
-            className="text-sm text-accent-900/55 hover:underline"
+            className="px-1 py-2.5 text-sm text-accent-900/55 hover:underline"
           >
             Add via photo
           </Link>
           <button
             type="button"
             onClick={() => openCreateModal(today)}
-            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50 md:py-2"
           >
             + New event
           </button>
@@ -224,23 +227,23 @@ export default function CalendarPage() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={goPrev} className="rounded-md border border-accent-200 px-3 py-2 text-sm font-medium text-accent-900/80 hover:bg-accent-50">
+          <button type="button" onClick={goPrev} className="rounded-md border border-accent-200 px-3 py-2.5 text-sm font-medium text-accent-900/80 hover:bg-accent-50 md:py-2">
             Prev
           </button>
-          <button type="button" onClick={goToday} className="rounded-md border border-accent-200 px-3 py-2 text-sm font-medium text-accent-900/80 hover:bg-accent-50">
+          <button type="button" onClick={goToday} className="rounded-md border border-accent-200 px-3 py-2.5 text-sm font-medium text-accent-900/80 hover:bg-accent-50 md:py-2">
             Today
           </button>
-          <button type="button" onClick={goNext} className="rounded-md border border-accent-200 px-3 py-2 text-sm font-medium text-accent-900/80 hover:bg-accent-50">
+          <button type="button" onClick={goNext} className="rounded-md border border-accent-200 px-3 py-2.5 text-sm font-medium text-accent-900/80 hover:bg-accent-50 md:py-2">
             Next
           </button>
           <span className="ml-2 text-sm font-medium text-accent-900/80">{rangeLabel}</span>
         </div>
 
-        <div className="flex items-center gap-1 rounded-md border border-accent-200 p-1">
+        <div className="flex w-full items-center gap-1 rounded-md border border-accent-200 p-1 md:w-auto">
           <button
             type="button"
             onClick={() => setViewMode("week")}
-            className={`rounded px-3 py-1 text-sm font-medium ${
+            className={`flex-1 rounded px-3 py-2.5 text-sm font-medium md:flex-none md:py-1 ${
               viewMode === "week" ? "bg-accent-600 text-white" : "text-accent-900/70"
             }`}
           >
@@ -249,7 +252,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={() => setViewMode("twoWeek")}
-            className={`rounded px-3 py-1 text-sm font-medium ${
+            className={`flex-1 rounded px-3 py-2.5 text-sm font-medium md:flex-none md:py-1 ${
               viewMode === "twoWeek" ? "bg-accent-600 text-white" : "text-accent-900/70"
             }`}
           >
@@ -258,7 +261,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={() => setViewMode("month")}
-            className={`rounded px-3 py-1 text-sm font-medium ${
+            className={`flex-1 rounded px-3 py-2.5 text-sm font-medium md:flex-none md:py-1 ${
               viewMode === "month" ? "bg-accent-600 text-white" : "text-accent-900/70"
             }`}
           >
@@ -292,8 +295,9 @@ export default function CalendarPage() {
                   <button
                     type="button"
                     onClick={() => openCreateModal(day)}
-                    className="text-xs text-neutral-400 hover:text-neutral-600"
+                    className="-m-2 flex h-10 w-10 items-center justify-center text-xl leading-none text-neutral-400 hover:text-neutral-600 md:h-auto md:w-auto md:text-xs"
                     title="Add event on this day"
+                    aria-label="Add event on this day"
                   >
                     +
                   </button>
@@ -371,10 +375,13 @@ export default function CalendarPage() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => openCreateModal(day)}
-                  className={`min-h-24 p-1.5 text-left align-top ${
+                  onClick={() => {
+                    if (window.matchMedia("(min-width: 768px)").matches) openCreateModal(day);
+                    else setSelectedDayKey(key);
+                  }}
+                  className={`min-h-14 p-1 text-left align-top md:min-h-24 md:p-1.5 ${
                     inMonth ? "bg-white" : "bg-accent-50/40"
-                  } hover:bg-accent-50`}
+                  } ${key === agendaKey ? "ring-2 ring-inset ring-accent-500 md:ring-0" : ""} hover:bg-accent-50`}
                 >
                   <span
                     className={`mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${
@@ -387,7 +394,19 @@ export default function CalendarPage() {
                   >
                     {day.getDate()}
                   </span>
-                  <ul className="space-y-0.5">
+                  <div className="flex flex-wrap gap-0.5 md:hidden">
+                    {dayEvents.slice(0, 4).map((event) => {
+                      const first = event.assigned_member_ids.map((id) => memberById.get(id)).find(Boolean);
+                      return (
+                        <span
+                          key={event.id}
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: first?.color ?? "#a3a3a3" }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <ul className="hidden space-y-0.5 md:block">
                     {dayEvents.slice(0, 3).map((event) => {
                       const assignedMembers = event.assigned_member_ids
                         .map((id) => memberById.get(id))
@@ -429,6 +448,64 @@ export default function CalendarPage() {
               );
             })}
           </div>
+
+          <section className="mt-4 md:hidden">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-[var(--foreground)]">
+                {new Date(`${agendaKey}T00:00:00`).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </h2>
+              <button
+                type="button"
+                onClick={() => openCreateModal(new Date(`${agendaKey}T00:00:00`))}
+                className="rounded-md border border-accent-200 px-3 py-2 text-sm font-medium text-accent-900/80 active:bg-accent-50"
+              >
+                + Add
+              </button>
+            </div>
+            {agendaEvents.length === 0 ? (
+              <p className="text-sm text-neutral-400">No events</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {agendaEvents.map((event) => {
+                  const assigned = event.assigned_member_ids
+                    .map((id) => memberById.get(id))
+                    .filter((m): m is FamilyMember => Boolean(m));
+                  return (
+                    <li key={event.id}>
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(event)}
+                        className="w-full rounded-lg border border-accent-100 bg-white px-3 py-2.5 text-left active:bg-accent-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="flex shrink-0 -space-x-0.5">
+                            {(assigned.length > 0 ? assigned.map((m) => m.color) : ["#a3a3a3"]).map((c, i) => (
+                              <span
+                                key={i}
+                                className="h-2.5 w-2.5 rounded-full ring-1 ring-white"
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </span>
+                          <span className="truncate text-sm font-medium text-[var(--foreground)]">{event.title}</span>
+                        </div>
+                        <span className="text-xs text-accent-900/55">
+                          {event.all_day
+                            ? "All day"
+                            : new Date(event.starts_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                          {event.location ? ` · ${event.location}` : ""}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
         </div>
       )}
 

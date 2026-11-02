@@ -141,7 +141,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/recipes" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
+      <Link href="/recipes" className="mb-2 inline-block py-2 text-sm text-accent-900/55 hover:underline">
         Back to recipes
       </Link>
 
@@ -158,7 +158,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
           value={recipe.category ?? ""}
           onChange={(e) => handleClassify({ category: e.target.value || null })}
           aria-label="Dish type"
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          className="rounded-md border border-neutral-300 px-2 py-2 text-sm"
         >
           <option value="">No dish type</option>
           {RECIPE_CATEGORIES.map((c) => (
@@ -174,7 +174,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
           value={recipe.kosher_type ?? ""}
           onChange={(e) => handleClassify({ kosher_type: (e.target.value || null) as KosherType | null })}
           aria-label="Meat, dairy or parve"
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          className="rounded-md border border-neutral-300 px-2 py-2 text-sm"
         >
           <option value="">Not set</option>
           {KOSHER_TYPES.map((k) => (
@@ -188,7 +188,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
             href={recipe.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-accent-900/55 hover:underline"
+            className="py-2 text-accent-900/55 hover:underline"
           >
             Original post
           </a>
@@ -219,7 +219,7 @@ export function RecipeDetailClient({ recipeId }: { recipeId: string }) {
               type="button"
               onClick={handleAddToGroceryList}
               disabled={addingToList || ingredients.length === 0}
-              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
               {addingToList ? "Adding..." : "Add ingredients to grocery list"}
             </button>

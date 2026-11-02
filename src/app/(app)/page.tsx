@@ -217,7 +217,7 @@ export default function DashboardPage() {
         <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-medium text-[var(--foreground)]">Calendar this week</h2>
-            <Link href="/calendar" className="text-sm text-accent-900/55 hover:underline">
+            <Link href="/calendar" className="-my-2 py-2 text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
         <section className="rounded-xl border border-accent-100 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-medium text-[var(--foreground)]">Meals this week</h2>
-            <Link href="/meals" className="text-sm text-accent-900/55 hover:underline">
+            <Link href="/meals" className="-my-2 py-2 text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                         if (!label) return null;
                         return (
                           <li key={entry.id} className="flex gap-2">
-                            <span className="text-accent-900/55">{SLOT_LABELS[entry.meal_slot]}:</span>
+                            <span className="shrink-0 whitespace-nowrap text-accent-900/55">{SLOT_LABELS[entry.meal_slot]}:</span>
                             <span className="text-[var(--foreground)]">{label}</span>
                           </li>
                         );
@@ -321,7 +321,7 @@ export default function DashboardPage() {
         <section className="rounded-xl border border-accent-100 p-4 md:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-medium text-[var(--foreground)]">Today&apos;s tasks</h2>
-            <Link href="/tasks" className="text-sm text-accent-900/55 hover:underline">
+            <Link href="/tasks" className="-my-2 py-2 text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>
@@ -369,7 +369,7 @@ export default function DashboardPage() {
         <section className="rounded-xl border border-accent-100 p-4 md:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-medium text-[var(--foreground)]">Lists</h2>
-            <Link href="/lists" className="text-sm text-accent-900/55 hover:underline">
+            <Link href="/lists" className="-my-2 py-2 text-sm text-accent-900/55 hover:underline">
               View all
             </Link>
           </div>

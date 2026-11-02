@@ -121,13 +121,13 @@ export default function RewardsPage() {
                     setRedeemAmount((prev) => ({ ...prev, [kid.id]: e.target.value }))
                   }
                   placeholder="Stars"
-                  className="w-20 rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+                  className="w-20 rounded-md border border-neutral-300 px-3 py-2.5 text-sm outline-none focus:border-neutral-500"
                 />
                 <button
                   type="button"
                   onClick={() => handleRedeem(kid)}
                   disabled={redeeming === kid.id || !redeemAmount[kid.id]}
-                  className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                  className="rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                 >
                   {redeeming === kid.id ? "Redeeming…" : "Mark redeemed"}
                 </button>

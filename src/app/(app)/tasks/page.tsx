@@ -432,31 +432,33 @@ export default function TasksPage() {
                   onPointerMove={handlePointerMoveWhileDragging}
                   onPointerUp={handlePointerUpFromDrag}
                   onPointerCancel={handlePointerUpFromDrag}
-                  className="cursor-grab touch-none select-none text-neutral-300"
+                  className="cursor-grab touch-none select-none px-1 py-2 text-lg leading-none text-neutral-300"
                   style={{ touchAction: "none" }}
                   title="Drag to reorder"
                 >
                   ⠿
                 </span>
-                <input
-                  type="checkbox"
-                  checked={instance.completed}
-                  onChange={(e) => toggleInstance(instance, e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-300"
-                />
-                <span
-                  className={
-                    instance.completed
-                      ? "flex-1 text-sm text-neutral-400 line-through"
-                      : "flex-1 text-sm text-[var(--foreground)]"
-                  }
-                >
-                  {template.title}
-                </span>
+                <label className="flex min-w-0 flex-1 items-center gap-2 py-1">
+                  <input
+                    type="checkbox"
+                    checked={instance.completed}
+                    onChange={(e) => toggleInstance(instance, e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300"
+                  />
+                  <span
+                    className={
+                      instance.completed
+                        ? "flex-1 text-sm text-neutral-400 line-through"
+                        : "flex-1 text-sm text-[var(--foreground)]"
+                    }
+                  >
+                    {template.title}
+                  </span>
+                </label>
                 <button
                   type="button"
                   onClick={() => deleteChore(template)}
-                  className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                  className="px-2 py-3 text-xs text-neutral-400 hover:text-red-600 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                   aria-label={`Delete ${template.title}`}
                   title="Delete chore"
                 >
@@ -477,7 +479,7 @@ export default function TasksPage() {
         <button
           type="button"
           onClick={() => setAddOpen((v) => !v)}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+          className="rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
         >
           {addOpen ? "Cancel" : "+ Add chore"}
         </button>
@@ -614,14 +616,14 @@ export default function TasksPage() {
                         type="button"
                         onClick={() => claimInstance(instance)}
                         disabled={!currentMember}
-                        className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                        className="rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                       >
                         Claim
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteChore(template)}
-                        className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                        className="px-2 py-3 text-xs text-neutral-400 hover:text-red-600 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                         aria-label={`Delete ${template.title}`}
                         title="Delete chore"
                       >
@@ -634,21 +636,23 @@ export default function TasksPage() {
 
               return (
                 <li key={template.id} className="group flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={instance.completed}
-                    onChange={(e) => toggleInstance(instance, e.target.checked)}
-                    className="h-4 w-4 rounded border-neutral-300"
-                  />
-                  <span
-                    className={
-                      instance.completed
-                        ? "flex-1 text-sm text-neutral-400 line-through"
-                        : "flex-1 text-sm text-[var(--foreground)]"
-                    }
-                  >
-                    {template.title}
-                  </span>
+                  <label className="flex min-w-0 flex-1 items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={instance.completed}
+                      onChange={(e) => toggleInstance(instance, e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300"
+                    />
+                    <span
+                      className={
+                        instance.completed
+                          ? "flex-1 text-sm text-neutral-400 line-through"
+                          : "flex-1 text-sm text-[var(--foreground)]"
+                      }
+                    >
+                      {template.title}
+                    </span>
+                  </label>
                   <span className="flex items-center gap-1 text-xs text-accent-900/55">
                     <span
                       className="h-2 w-2 rounded-full"
@@ -659,7 +663,7 @@ export default function TasksPage() {
                   <button
                     type="button"
                     onClick={() => deleteChore(template)}
-                    className="text-xs text-neutral-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                    className="px-2 py-3 text-xs text-neutral-400 hover:text-red-600 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                     aria-label={`Delete ${template.title}`}
                     title="Delete chore"
                   >

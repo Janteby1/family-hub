@@ -138,7 +138,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
 
   return (
     <div className="p-4 md:p-8">
-      <Link href="/lists" className="mb-4 inline-block text-sm text-accent-900/55 hover:underline">
+      <Link href="/lists" className="mb-2 inline-block py-2.5 text-sm text-accent-900/55 hover:underline">
         ← Back to lists
       </Link>
 
@@ -151,7 +151,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
             {prevList ? (
               <Link
                 href={`/lists/${prevList.id}`}
-                className="text-accent-900/55 hover:underline"
+                className="py-2.5 text-accent-900/55 hover:underline"
                 title={prevList.name}
               >
                 ← Prev
@@ -162,7 +162,7 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
             {nextList ? (
               <Link
                 href={`/lists/${nextList.id}`}
-                className="text-accent-900/55 hover:underline"
+                className="py-2.5 text-accent-900/55 hover:underline"
                 title={nextList.name}
               >
                 Next →
@@ -226,18 +226,20 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
               key={item.id}
               className="flex items-center gap-3 rounded-md border border-accent-100 px-3 py-2"
             >
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => handleToggle(item)}
-                className="h-4 w-4 rounded border-neutral-300"
-              />
-              <span className="flex-1 text-sm text-[var(--foreground)]">{item.label}</span>
-              {item.quantity && <span className="text-xs text-accent-900/55">{item.quantity}</span>}
+              <label className="flex min-w-0 flex-1 items-center gap-3 py-1">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleToggle(item)}
+                  className="h-4 w-4 rounded border-neutral-300"
+                />
+                <span className="flex-1 text-sm text-[var(--foreground)]">{item.label}</span>
+                {item.quantity && <span className="text-xs text-accent-900/55">{item.quantity}</span>}
+              </label>
               <button
                 type="button"
                 onClick={() => handleDelete(item)}
-                className="text-xs text-neutral-400 hover:text-red-600"
+                className="-my-2 px-2 py-3 text-xs text-neutral-400 hover:text-red-600"
                 aria-label={`Remove ${item.label}`}
               >
                 Remove
@@ -253,20 +255,22 @@ export function ListDetailClient({ listId }: ListDetailClientProps) {
                   key={item.id}
                   className="flex items-center gap-3 rounded-md border border-accent-100 px-3 py-2"
                 >
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => handleToggle(item)}
-                    className="h-4 w-4 rounded border-neutral-300"
-                  />
-                  <span className="flex-1 text-sm line-through text-neutral-400">{item.label}</span>
-                  {item.quantity && (
-                    <span className="text-xs line-through text-neutral-400">{item.quantity}</span>
-                  )}
+                  <label className="flex min-w-0 flex-1 items-center gap-3 py-1">
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={() => handleToggle(item)}
+                      className="h-4 w-4 rounded border-neutral-300"
+                    />
+                    <span className="flex-1 text-sm line-through text-neutral-400">{item.label}</span>
+                    {item.quantity && (
+                      <span className="text-xs line-through text-neutral-400">{item.quantity}</span>
+                    )}
+                  </label>
                   <button
                     type="button"
                     onClick={() => handleDelete(item)}
-                    className="text-xs text-neutral-400 hover:text-red-600"
+                    className="-my-2 px-2 py-3 text-xs text-neutral-400 hover:text-red-600"
                     aria-label={`Remove ${item.label}`}
                   >
                     Remove

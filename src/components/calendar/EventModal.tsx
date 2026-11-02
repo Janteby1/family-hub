@@ -170,14 +170,19 @@ export function EventModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-lg">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 pb-0 shadow-lg sm:rounded-xl sm:pb-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-medium text-[var(--foreground)]">{isEdit ? "Edit event" : "New event"}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-accent-900/55 hover:text-neutral-700"
+            className="-m-2 p-2 text-sm text-accent-900/55 hover:text-neutral-700"
           >
             Close
           </button>
@@ -283,7 +288,7 @@ export function EventModal({
                     key={member.id}
                     type="button"
                     onClick={() => toggleAssignedMember(member.id)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition-colors ${
                       selected
                         ? "border-transparent text-white"
                         : "border-neutral-300 text-neutral-700 hover:bg-neutral-50"
@@ -307,14 +312,14 @@ export function EventModal({
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
+        <div className="sticky bottom-0 -mx-4 mt-4 flex items-center justify-between border-t border-neutral-100 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:border-0 sm:px-0 sm:pb-0 sm:pt-0">
           <div>
             {isEdit && (
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="rounded-md border border-red-300 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
@@ -324,7 +329,7 @@ export function EventModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded-md border border-neutral-300 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               Cancel
             </button>
@@ -332,7 +337,7 @@ export function EventModal({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save"}
             </button>

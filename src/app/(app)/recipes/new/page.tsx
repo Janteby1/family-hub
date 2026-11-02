@@ -181,7 +181,7 @@ export default function NewRecipePage() {
           <button
             type="submit"
             disabled={saving || !title.trim()}
-            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent-600 hover:bg-accent-700 px-3 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save recipe"}
           </button>
